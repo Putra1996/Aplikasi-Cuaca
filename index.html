@@ -3,361 +3,321 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Aplikasi Cuaca Klumprit, Jawa Tengah, Indonesia — Prakiraan cuaca harian, per jam, dan bulanan. Sumber data: AccuWeather.">
-  <meta name="keywords" content="cuaca, weather, klumprit, jawa tengah, indonesia, prakiraan, accuweather">
+  <meta name="description" content="Dashboard cuaca demonstrasi untuk Klumprit, Jawa Tengah: prakiraan 10 hari, radar ilustratif, MinuteCast, cuaca bulanan, kualitas udara, dan kesehatan. Data cuaca bukan feed langsung.">
+  <meta name="keywords" content="cuaca, Klumprit, Jawa Tengah, prakiraan, radar, kualitas udara">
   <meta name="author" content="CuacaKu">
   <meta name="theme-color" content="#0f172a">
-  <meta property="og:title" content="Cuaca Klumprit — Aplikasi Cuaca">
-  <meta property="og:description" content="Prakiraan cuaca lengkap untuk Klumprit, Jawa Tengah, Indonesia">
+  <meta property="og:title" content="Cuaca Klumprit — CuacaKu">
+  <meta property="og:description" content="Dashboard cuaca Klumprit dengan fitur prakiraan, radar, kualitas udara, dan aktivitas. Dataset demonstrasi, bukan data real-time.">
   <meta property="og:type" content="website">
-  <title>Cuaca Klumprit — Aplikasi Cuaca</title>
+  <title>Cuaca Klumprit — CuacaKu</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/features.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛅</text></svg>">
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div id="loading-screen" class="loading-screen">
-    <div class="loader">
+  <noscript><div class="noscript-notice">CuacaKu membutuhkan JavaScript untuk menampilkan dashboard. Aktifkan JavaScript atau buka tautan AccuWeather resmi yang tersedia di halaman ini.</div></noscript>
+  <div id="loading-screen" class="loading-screen" aria-live="polite">
+    <div class="loader" aria-hidden="true">
       <div class="loader-sun"></div>
       <div class="loader-cloud"></div>
     </div>
-    <p class="loading-text">Memuat data cuaca...</p>
+    <p class="loading-text">Menyiapkan dashboard cuaca…</p>
   </div>
 
   <div id="app" class="app hidden">
-    <!-- Header -->
     <header class="header">
       <div class="header-inner">
-        <div class="logo">
-          <span class="logo-icon">⛅</span>
+        <button class="logo logo-button" type="button" data-tab="beranda" aria-label="CuacaKu — Beranda">
+          <span class="logo-icon" aria-hidden="true">⛅</span>
           <span class="logo-text">CuacaKu</span>
-        </div>
-        <nav class="nav-tabs" id="nav-tabs">
-          <button class="nav-tab active" data-tab="beranda">🏠 Beranda</button>
-          <button class="nav-tab" data-tab="harian">📅 Harian</button>
-          <button class="nav-tab" data-tab="per-jam">🕐 Per Jam</button>
-          <button class="nav-tab" data-tab="bulanan">📊 Bulanan</button>
-          <button class="nav-tab" data-tab="tentang">ℹ️ Tentang</button>
+        </button>
+        <nav class="nav-tabs" id="nav-tabs" aria-label="Navigasi utama">
+          <button class="nav-tab active" type="button" data-tab="beranda" aria-controls="tab-beranda" aria-current="page">🏠 Beranda</button>
+          <button class="nav-tab" type="button" data-tab="harian" aria-controls="tab-harian">📅 10 Hari</button>
+          <button class="nav-tab" type="button" data-tab="per-jam" aria-controls="tab-per-jam">🕐 Per Jam</button>
+          <button class="nav-tab" type="button" data-tab="minute-cast" aria-controls="tab-minute-cast">🌧️ MinuteCast</button>
+          <button class="nav-tab" type="button" data-tab="radar" aria-controls="tab-radar">🗺️ Radar</button>
+          <button class="nav-tab" type="button" data-tab="bulanan" aria-controls="tab-bulanan">📊 Per Bulan</button>
+          <button class="nav-tab" type="button" data-tab="udara" aria-controls="tab-udara">🌫️ Udara</button>
+          <button class="nav-tab" type="button" data-tab="aktivitas" aria-controls="tab-aktivitas">🏃 Aktivitas</button>
+          <button class="nav-tab" type="button" data-tab="tentang" aria-controls="tab-tentang">ℹ️ Tentang</button>
         </nav>
         <div class="header-actions">
-          <button class="btn-unit" id="btn-unit" title="Ganti satuan">°F / °C</button>
-          <button class="btn-refresh" id="btn-refresh" title="Muat ulang">🔄</button>
+          <button class="btn-unit" id="btn-unit" type="button" aria-label="Ganti satuan suhu">°C</button>
+          <button class="btn-refresh" id="btn-refresh" type="button" title="Segarkan tampilan" aria-label="Segarkan tampilan">↻</button>
         </div>
-        <button class="hamburger" id="hamburger" aria-label="Menu">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Buka menu" aria-controls="mobile-nav" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
     </header>
 
-    <!-- Mobile Nav -->
-    <nav class="mobile-nav hidden" id="mobile-nav">
-      <button class="nav-tab active" data-tab="beranda">🏠 Beranda</button>
-      <button class="nav-tab" data-tab="harian">📅 Harian</button>
-      <button class="nav-tab" data-tab="per-jam">🕐 Per Jam</button>
-      <button class="nav-tab" data-tab="bulanan">📊 Bulanan</button>
-      <button class="nav-tab" data-tab="tentang">ℹ️ Tentang</button>
+    <nav class="mobile-nav hidden" id="mobile-nav" aria-label="Navigasi seluler">
+      <button class="nav-tab active" type="button" data-tab="beranda" aria-controls="tab-beranda" aria-current="page">🏠 Beranda</button>
+      <button class="nav-tab" type="button" data-tab="harian" aria-controls="tab-harian">📅 10 Hari</button>
+      <button class="nav-tab" type="button" data-tab="per-jam" aria-controls="tab-per-jam">🕐 Per Jam</button>
+      <button class="nav-tab" type="button" data-tab="minute-cast" aria-controls="tab-minute-cast">🌧️ MinuteCast</button>
+      <button class="nav-tab" type="button" data-tab="radar" aria-controls="tab-radar">🗺️ Radar</button>
+      <button class="nav-tab" type="button" data-tab="bulanan" aria-controls="tab-bulanan">📊 Per Bulan</button>
+      <button class="nav-tab" type="button" data-tab="udara" aria-controls="tab-udara">🌫️ Kualitas Udara</button>
+      <button class="nav-tab" type="button" data-tab="aktivitas" aria-controls="tab-aktivitas">🏃 Kesehatan & Aktivitas</button>
+      <button class="nav-tab" type="button" data-tab="tentang" aria-controls="tab-tentang">ℹ️ Tentang</button>
+      <div class="mobile-tools" aria-label="Pengaturan">
+        <button class="btn-unit" id="btn-unit-mobile" type="button" aria-label="Ganti satuan suhu">°C</button>
+        <button class="btn-refresh" id="btn-refresh-mobile" type="button" aria-label="Segarkan tampilan">↻ Segarkan</button>
+      </div>
     </nav>
 
-    <!-- ============ TAB: BERANDA ============ -->
-    <main id="tab-beranda" class="tab-content active">
-      <!-- Hero Current Weather -->
+    <div class="data-notice" role="note">
+      <span class="data-notice-icon" aria-hidden="true">ⓘ</span>
+      <p><strong>Snapshot sumber.</strong> Cuaca, 10 hari, per jam, dan AQI dicocokkan dengan AccuWeather pada 12 Okt 2026 21:37 WIB; data tidak diperbarui otomatis. Radar, MinuteCast, dan kalender bulanan tetap simulasi/contoh.</p>
+      <a href="https://www.accuweather.com/id/id/klumprit/3454553/current-weather/3454553" target="_blank" rel="noopener noreferrer">Lihat cuaca saat ini ↗</a>
+    </div>
+    <p id="refresh-status" class="sr-only" aria-live="polite"></p>
+
+    <main id="tab-beranda" class="tab-content active" aria-label="Beranda">
       <section class="hero" id="hero-section">
-        <div class="hero-bg"></div>
+        <div class="hero-bg" aria-hidden="true"></div>
         <div class="hero-content">
           <div class="location-info">
-            <span class="location-icon">📍</span>
+            <span class="location-icon" aria-hidden="true">📍</span>
             <div>
               <h1 class="location-name" id="location-name">Klumprit, Jawa Tengah</h1>
-              <p class="location-detail" id="location-detail">Indonesia · Minggu, 12 Oktober 2026</p>
+              <p class="location-detail" id="location-detail">Indonesia · Senin, 12 Oktober 2026 · AccuWeather 21:37 WIB (snapshot)</p>
             </div>
           </div>
           <div class="current-weather-main">
             <div class="current-temp-wrap">
-              <img id="current-icon" class="current-icon" src="https://www.accuweather.com/images/weathericons/v2a/05.svg" alt="Cuaca">
-              <div class="current-temp" id="current-temp">86°</div>
+              <span id="current-icon" class="current-icon weather-emoji" role="img" aria-label="Awan berkabut">🌫️</span>
+              <div class="current-temp" id="current-temp">24°C</div>
             </div>
-            <div class="current-desc" id="current-desc">Berkabut</div>
-            <div class="current-feels" id="current-feels">Terasa seperti 92°</div>
+            <div class="current-desc" id="current-desc">Awan berkabut</div>
+            <div class="current-feels" id="current-feels">Terasa seperti 27°C</div>
           </div>
           <div class="current-details-grid">
-            <div class="detail-card">
-              <span class="detail-icon">🌡️</span>
-              <span class="detail-label">Tinggi / Rendah</span>
-              <span class="detail-value" id="detail-high-low">89° / 72°</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">💧</span>
-              <span class="detail-label">Kelembapan</span>
-              <span class="detail-value" id="detail-humidity">78%</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">💨</span>
-              <span class="detail-label">Angin</span>
-              <span class="detail-value" id="detail-wind">8 km/h SE</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">🌧️</span>
-              <span class="detail-label">Curah Hujan</span>
-              <span class="detail-value" id="detail-rain">40%</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">👁️</span>
-              <span class="detail-label">Jarak Pandang</span>
-              <span class="detail-value" id="detail-visibility">10 km</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">☀️</span>
-              <span class="detail-label">Indeks UV</span>
-              <span class="detail-value" id="detail-uv">11 Ekstrem</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">🌅</span>
-              <span class="detail-label">Matahari Terbit</span>
-              <span class="detail-value" id="detail-sunrise">05:28</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-icon">🌇</span>
-              <span class="detail-label">Matahari Terbenam</span>
-              <span class="detail-value" id="detail-sunset">17:42</span>
-            </div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌡️</span><span class="detail-label">Tinggi / Rendah</span><span class="detail-value" id="detail-high-low">32°C / 22°C</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">💧</span><span class="detail-label">Kelembapan</span><span class="detail-value" id="detail-humidity">91%</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">💨</span><span class="detail-label">Angin</span><span class="detail-value" id="detail-wind">13 km/j TTG · gust 23 km/j</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌧️</span><span class="detail-label">Peluang hujan malam</span><span class="detail-value" id="detail-rain">6%</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">👁️</span><span class="detail-label">Jarak pandang</span><span class="detail-value" id="detail-visibility">9,7 km</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">☀️</span><span class="detail-label">Indeks UV</span><span class="detail-value" id="detail-uv">Tidak tersedia</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌅</span><span class="detail-label">Matahari terbit</span><span class="detail-value" id="detail-sunrise">05:22</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌇</span><span class="detail-label">Matahari terbenam</span><span class="detail-value" id="detail-sunset">17:36</span></div>
+            <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌫️</span><span class="detail-label">Kualitas udara</span><span class="detail-value" id="detail-air">AQI 205 · Sangat Tidak Sehat</span></div>
           </div>
         </div>
       </section>
 
-      <!-- 5-Day Forecast Quick -->
       <section class="section">
-        <h2 class="section-title">📅 Prakiraan 5 Hari</h2>
-        <div class="forecast-scroll" id="forecast-5day"></div>
-      </section>
-
-      <!-- Weather Alerts -->
-      <section class="section">
-        <h2 class="section-title">⚠️ Peringatan Cuaca</h2>
-        <div class="alerts-container" id="alerts-container">
-          <div class="alert-card alert-info">
-            <span class="alert-icon">ℹ️</span>
-            <div class="alert-content">
-              <h3>Informasi Cuaca Hari Ini</h3>
-              <p>Suhu tinggi diperkirakan mencapai 89°F dengan kelembapan tinggi. Disarankan untuk tetap terhidrasi dan menggunakan tabir surya saat beraktivitas di luar ruangan.</p>
-            </div>
-          </div>
+        <div class="section-heading-row">
+          <div><h2 class="section-title">📅 Prakiraan 5 Hari</h2><p class="section-subtitle">Ringkasan singkat dari daftar prakiraan 10 hari.</p></div>
+          <button class="text-link-button" type="button" data-tab="harian">Lihat 10 hari →</button>
         </div>
+        <div class="forecast-scroll" id="forecast-5day" aria-label="Prakiraan 5 hari"></div>
       </section>
 
-      <!-- Comfort Index -->
       <section class="section">
-        <h2 class="section-title">🎯 Indeks Kenyamanan</h2>
-        <div class="comfort-grid" id="comfort-grid">
-          <div class="comfort-card">
-            <div class="comfort-gauge" data-value="75" data-color="#f59e0b">
-              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
-              <span class="comfort-val">75</span>
-            </div>
-            <span class="comfort-label">Aktivitas Luar</span>
-          </div>
-          <div class="comfort-card">
-            <div class="comfort-gauge" data-value="60" data-color="#3b82f6">
-              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
-              <span class="comfort-val">60</span>
-            </div>
-            <span class="comfort-label">Berlari</span>
-          </div>
-          <div class="comfort-card">
-            <div class="comfort-gauge" data-value="85" data-color="#22c55e">
-              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
-              <span class="comfort-val">85</span>
-            </div>
-            <span class="comfort-label">Memancing</span>
-          </div>
-          <div class="comfort-card">
-            <div class="comfort-gauge" data-value="40" data-color="#ef4444">
-              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
-              <span class="comfort-val">40</span>
-            </div>
-            <span class="comfort-label">Bersepeda</span>
-          </div>
+        <h2 class="section-title">⚠️ Catatan cuaca</h2>
+        <div class="alerts-container" id="alerts-container" aria-live="polite"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading-row"><div><h2 class="section-title">🎯 Kenyamanan aktivitas</h2><p class="section-subtitle">Skor heuristik; memperhitungkan AQI AccuWeather snapshot dan memberi penalti konservatif karena UV tidak tersedia.</p></div><button class="text-link-button" type="button" data-tab="aktivitas">Lihat kesehatan & aktivitas →</button></div>
+        <div class="comfort-grid" id="comfort-grid"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Jelajahi fitur</h2>
+        <div class="quick-feature-grid">
+          <button class="quick-feature" type="button" data-tab="minute-cast"><span aria-hidden="true">🌧️</span><strong>MinuteCast</strong><small>Intensitas hujan per 5 menit</small></button>
+          <button class="quick-feature" type="button" data-tab="radar"><span aria-hidden="true">🗺️</span><strong>Radar</strong><small>Animasi presipitasi skematis</small></button>
+          <button class="quick-feature" type="button" data-tab="udara"><span aria-hidden="true">🌫️</span><strong>Kualitas udara</strong><small>AQI & rincian polutan</small></button>
+          <button class="quick-feature" type="button" data-tab="bulanan"><span aria-hidden="true">📊</span><strong>Per Bulan</strong><small>Kalender, ringkasan & grafik</small></button>
         </div>
       </section>
     </main>
 
-    <!-- ============ TAB: HARIAN ============ -->
-    <main id="tab-harian" class="tab-content">
+    <main id="tab-harian" class="tab-content" aria-label="Prakiraan 10 hari">
       <section class="section">
-        <h2 class="section-title">📅 Prakiraan 10 Hari — Oktober 2026</h2>
-        <p class="section-subtitle">Klumprit, Jawa Tengah, Indonesia</p>
+        <div class="section-heading-row"><div><h1 class="section-title">📅 Prakiraan 10 Hari</h1><p class="section-subtitle" id="daily-period">Klumprit, Jawa Tengah · 12–21 Okt 2026 · snapshot AccuWeather 12 Okt 2026 21:37 WIB</p></div><span class="data-badge">10 hari</span></div>
+        <p class="section-note">Pilih satu hari untuk melihat rincian peluang hujan, kelembapan, angin, dan indeks UV.</p>
         <div class="daily-forecast-list" id="daily-forecast-list"></div>
       </section>
       <section class="section">
-        <h2 class="section-title">📈 Grafik Suhu Harian</h2>
-        <div class="chart-container">
-          <canvas id="daily-temp-chart" width="900" height="350"></canvas>
+        <h2 class="section-title">📈 Rentang suhu harian</h2>
+        <div class="chart-container"><canvas id="daily-temp-chart" width="900" height="350" aria-label="Grafik suhu tertinggi dan terendah sepuluh hari" role="img">Grafik suhu sepuluh hari.</canvas></div>
+      </section>
+    </main>
+
+    <main id="tab-per-jam" class="tab-content" aria-label="Prakiraan per jam">
+      <section class="section">
+        <h1 class="section-title">🕐 Prakiraan Per Jam</h1>
+        <p class="section-subtitle">Snapshot AccuWeather 12–13 Oktober 2026 · diperiksa 12 Okt 2026 21:37 WIB · kecepatan angin dikonversi dari mph.</p>
+        <div class="hourly-tabs" role="group" aria-label="Pilih tanggal prakiraan per jam">
+          <button class="hourly-tab active" type="button" data-day="today" aria-pressed="true">Sisa malam · 12 Okt</button>
+          <button class="hourly-tab" type="button" data-day="tomorrow" aria-pressed="false">13 Okt</button>
+        </div>
+        <div class="hourly-timeline" id="hourly-timeline" aria-label="Prakiraan cuaca per jam"></div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📈 Suhu & peluang hujan per jam</h2>
+        <div class="chart-container"><canvas id="hourly-temp-chart" width="900" height="300" aria-label="Grafik suhu dan peluang hujan per jam" role="img">Grafik suhu dan hujan per jam.</canvas></div>
+      </section>
+    </main>
+
+    <main id="tab-minute-cast" class="tab-content" aria-label="MinuteCast">
+      <section class="section">
+        <div class="section-heading-row"><div><h1 class="section-title">🌧️ MinuteCast</h1><p class="section-subtitle">Tren peluang hujan dalam jendela 30–120 menit.</p></div><span class="data-badge data-badge-demo">Simulasi</span></div>
+        <div class="feature-callout" role="note"><strong>Perlu diketahui:</strong> MinuteCast di halaman ini adalah visualisasi lokal berbasis data contoh, bukan nowcast radar atau prediksi menit aktual. <a href="https://www.accuweather.com/id/id/klumprit/3454553/minute-weather-forecast/3454553" target="_blank" rel="noopener noreferrer">Buka MinuteCast AccuWeather ↗</a></div>
+        <div class="minute-summary-card">
+          <div><span class="eyebrow">Ringkasan jendela terpilih</span><h2 id="minute-summary-title">Memuat ringkasan…</h2><p id="minute-summary-copy"></p></div>
+          <div class="minute-current"><span class="minute-current-label">Peluang tertinggi</span><strong id="minute-peak-value">—</strong><span id="minute-peak-time">—</span></div>
+        </div>
+        <div class="minute-toolbar">
+          <div class="segmented-control" role="group" aria-label="Rentang MinuteCast">
+            <button class="minute-window active" type="button" data-minute-window="30" aria-pressed="true">30 menit</button>
+            <button class="minute-window" type="button" data-minute-window="60" aria-pressed="false">60 menit</button>
+            <button class="minute-window" type="button" data-minute-window="120" aria-pressed="false">120 menit</button>
+          </div>
+          <span class="minute-clock" id="minute-clock">Waktu lokal WIB</span>
+        </div>
+        <div class="minute-chart-card">
+          <div class="minute-chart-heading"><strong>Peluang presipitasi</strong><span>Per interval 5 menit · %</span></div>
+          <div class="minute-chart" id="minute-chart" role="list" aria-label="Peluang presipitasi setiap lima menit"></div>
+          <div class="minute-axis"><span>Sekarang</span><span>+30 mnt</span><span id="minute-axis-end">+30 mnt</span></div>
         </div>
       </section>
     </main>
 
-    <!-- ============ TAB: PER JAM ============ -->
-    <main id="tab-per-jam" class="tab-content">
+    <main id="tab-radar" class="tab-content" aria-label="Radar cuaca">
       <section class="section">
-        <h2 class="section-title">🕐 Prakiraan Per Jam</h2>
-        <p class="section-subtitle">Detail cuaca per jam untuk hari ini</p>
-        <div class="hourly-tabs">
-          <button class="hourly-tab active" data-day="today">Hari Ini</button>
-          <button class="hourly-tab" data-day="tomorrow">Besok</button>
-        </div>
-        <div class="hourly-timeline" id="hourly-timeline"></div>
-      </section>
-      <section class="section">
-        <h2 class="section-title">📈 Suhu Per Jam</h2>
-        <div class="chart-container">
-          <canvas id="hourly-temp-chart" width="900" height="300"></canvas>
-        </div>
-      </section>
-    </main>
-
-    <!-- ============ TAB: BULANAN ============ -->
-    <main id="tab-bulanan" class="tab-content">
-      <section class="section">
-        <h2 class="section-title">📊 Cuaca Bulanan — Oktober 2026</h2>
-        <p class="section-subtitle">Ringkasan cuaca sepanjang bulan untuk Klumprit, Jawa Tengah</p>
-        <div class="monthly-summary" id="monthly-summary">
-          <div class="summary-card">
-            <span class="summary-icon">🌡️</span>
-            <span class="summary-label">Suhu Rata-rata</span>
-            <span class="summary-value" id="summary-avg">82°F</span>
+        <div class="section-heading-row"><div><h1 class="section-title">🗺️ Radar Cuaca</h1><p class="section-subtitle">Animasi presipitasi ilustratif di sekitar Klumprit.</p></div><span class="data-badge data-badge-demo">Bukan radar live</span></div>
+        <div class="feature-callout" role="note"><strong>Simulasi peta:</strong> latar, lokasi sekitar, dan sel hujan digambar secara skematis untuk mendemonstrasikan kontrol radar. Tidak mewakili pengamatan radar aktual. <a href="https://www.accuweather.com/id/id/klumprit/3454553/weather-radar/3454553" target="_blank" rel="noopener noreferrer">Buka radar AccuWeather ↗</a></div>
+        <div class="radar-layout">
+          <div class="radar-map-card">
+            <div class="radar-map-toolbar">
+              <div class="radar-sim-label"><span class="radar-status-dot" aria-hidden="true"></span><span id="radar-frame-label">Akhir simulasi</span></div>
+              <div class="radar-map-actions">
+                <button type="button" id="radar-zoom-out" aria-label="Perkecil peta" title="Perkecil">−</button>
+                <button type="button" id="radar-zoom-in" aria-label="Perbesar peta" title="Perbesar">+</button>
+                <button type="button" id="radar-center" aria-label="Pusatkan peta ke Klumprit" title="Pusatkan ke Klumprit">⌖</button>
+              </div>
+            </div>
+            <div class="radar-canvas-wrap">
+              <canvas id="radar-canvas" width="960" height="560" role="img" aria-label="Peta skematis dengan lapisan presipitasi simulasi di sekitar Klumprit">Visualisasi radar simulasi wilayah Klumprit.</canvas>
+              <span class="map-schematic-stamp">PETA SKEMATIS · BUKAN PETA JALAN</span>
+            </div>
+            <div class="radar-timeline-control">
+              <label for="radar-timeline"><span>Awal simulasi</span><span id="radar-time-current">Akhir simulasi</span></label>
+              <input id="radar-timeline" type="range" min="0" max="6" value="6" step="1" aria-label="Pilih bingkai waktu radar">
+              <div class="radar-timeline-labels"><span>−60</span><span>−40</span><span>−20</span><span>Akhir simulasi</span></div>
+            </div>
           </div>
-          <div class="summary-card">
-            <span class="summary-icon">⬆️</span>
-            <span class="summary-label">Suhu Tertinggi</span>
-            <span class="summary-value" id="summary-max">91°F</span>
-          </div>
-          <div class="summary-card">
-            <span class="summary-icon">⬇️</span>
-            <span class="summary-label">Suhu Terendah</span>
-            <span class="summary-value" id="summary-min">69°F</span>
-          </div>
-          <div class="summary-card">
-            <span class="summary-icon">🌧️</span>
-            <span class="summary-label">Hari Hujan</span>
-            <span class="summary-value">8 hari</span>
-          </div>
-          <div class="summary-card">
-            <span class="summary-icon">☀️</span>
-            <span class="summary-label">Hari Cerah</span>
-            <span class="summary-value">12 hari</span>
-          </div>
-          <div class="summary-card">
-            <span class="summary-icon">☁️</span>
-            <span class="summary-label">Hari Berawan</span>
-            <span class="summary-value">11 hari</span>
-          </div>
-        </div>
-      </section>
-      <section class="section">
-        <h2 class="section-title">📅 Kalender Cuaca Oktober</h2>
-        <div class="monthly-calendar" id="monthly-calendar"></div>
-      </section>
-      <section class="section">
-        <h2 class="section-title">📈 Grafik Suhu Bulanan</h2>
-        <div class="chart-container">
-          <canvas id="monthly-temp-chart" width="900" height="350"></canvas>
-        </div>
-      </section>
-      <section class="section">
-        <h2 class="section-title">📋 Data Harian Oktober</h2>
-        <div class="table-responsive">
-          <table class="data-table" id="monthly-table">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Hari</th>
-                <th>Kondisi</th>
-                <th>Tinggi</th>
-                <th>Rendah</th>
-                <th>Cuaca</th>
-              </tr>
-            </thead>
-            <tbody id="monthly-table-body"></tbody>
-          </table>
+          <aside class="radar-side-card">
+            <h2>Kontrol radar</h2>
+            <button type="button" class="radar-play-button" id="radar-play" aria-pressed="false">▶ Putar simulasi</button>
+            <fieldset class="radar-layers"><legend>Lapisan</legend>
+              <label><input id="radar-layer-rain" type="checkbox" checked> <span class="layer-swatch layer-rain"></span> Presipitasi</label>
+              <label><input id="radar-layer-cloud" type="checkbox" checked> <span class="layer-swatch layer-cloud"></span> Awan ilustratif</label>
+            </fieldset>
+            <div class="radar-legend"><strong>Intensitas simulasi</strong><span><i class="legend-dot light-rain"></i> Ringan</span><span><i class="legend-dot moderate-rain"></i> Sedang</span><span><i class="legend-dot heavy-rain"></i> Lebat</span></div>
+            <div class="radar-location"><span aria-hidden="true">📍</span><div><strong>Klumprit</strong><small id="radar-coordinates">−7.42, 109.24 · WIB</small></div></div>
+            <p class="radar-footnote">Geser peta untuk menjelajah area. Gunakan tombol +/− untuk zoom. Bingkai waktu dan pola hujan sepenuhnya sintetis.</p>
+          </aside>
         </div>
       </section>
     </main>
 
-    <!-- ============ TAB: TENTANG ============ -->
-    <main id="tab-tentang" class="tab-content">
+    <main id="tab-bulanan" class="tab-content" aria-label="Cuaca per bulan">
+      <section class="section">
+        <div class="section-heading-row"><div><h1 class="section-title">📊 Cuaca Per Bulan</h1><p class="section-subtitle" id="monthly-subtitle">Kalender cuaca, ringkasan suhu, dan tren hujan.</p></div><span class="data-badge data-badge-demo">Dataset contoh</span></div>
+        <div class="month-picker-row"><label for="month-picker">Pilih bulan</label><input id="month-picker" type="month" value="2026-10" aria-describedby="month-availability"><span id="month-availability">Data contoh tersedia untuk Oktober 2026 saja.</span></div>
+        <div id="monthly-empty" class="empty-state hidden" role="status"><span aria-hidden="true">📭</span><h2>Data bulan ini belum tersedia</h2><p>Audit menemukan dataset bulanan lokal hanya mencakup Oktober 2026. Tidak ada data lain yang akan dibuat-buat.</p><button type="button" class="primary-button" id="month-reset">Kembali ke Oktober 2026</button></div>
+        <div id="monthly-data-view">
+          <div class="monthly-summary" id="monthly-summary">
+            <div class="summary-card"><span class="summary-icon">🌡️</span><span class="summary-label">Rata-rata suhu</span><span class="summary-value" id="summary-avg">—</span></div>
+            <div class="summary-card"><span class="summary-icon">⬆️</span><span class="summary-label">Tertinggi</span><span class="summary-value" id="summary-max">—</span></div>
+            <div class="summary-card"><span class="summary-icon">⬇️</span><span class="summary-label">Terendah</span><span class="summary-value" id="summary-min">—</span></div>
+            <div class="summary-card"><span class="summary-icon">🌧️</span><span class="summary-label">Peluang hujan ≥40%</span><span class="summary-value" id="summary-rain-days">—</span></div>
+            <div class="summary-card"><span class="summary-icon">☀️</span><span class="summary-label">Hari cenderung cerah</span><span class="summary-value" id="summary-sunny-days">—</span></div>
+            <div class="summary-card"><span class="summary-icon">🧾</span><span class="summary-label">Hari dengan data</span><span class="summary-value" id="summary-coverage">—</span></div>
+          </div>
+          <section class="section section-inset">
+            <h2 class="section-title">📅 Kalender Cuaca <span id="calendar-month-label">Oktober 2026</span></h2>
+            <div class="monthly-calendar" id="monthly-calendar" aria-label="Kalender cuaca bulanan"></div>
+          </section>
+          <section class="section section-inset">
+            <div class="section-heading-row"><div><h2 class="section-title">📈 Tren Bulanan</h2><p class="section-subtitle">Ganti antara suhu maksimum/minimum dan peluang hujan.</p></div>
+              <div class="segmented-control" role="group" aria-label="Jenis grafik bulanan"><button type="button" class="month-chart-mode active" data-chart-mode="temperature" aria-pressed="true">Suhu</button><button type="button" class="month-chart-mode" data-chart-mode="rain" aria-pressed="false">Peluang hujan</button></div>
+            </div>
+            <div class="chart-container"><canvas id="monthly-temp-chart" width="900" height="350" aria-label="Grafik tren cuaca bulanan" role="img">Grafik cuaca bulanan.</canvas></div>
+          </section>
+          <section class="section section-inset">
+            <h2 class="section-title">📋 Rincian harian</h2>
+            <div class="table-responsive"><table class="data-table" id="monthly-table"><thead><tr><th scope="col">Tanggal</th><th scope="col">Hari</th><th scope="col">Kondisi</th><th scope="col">Tinggi</th><th scope="col">Rendah</th><th scope="col">Peluang hujan</th></tr></thead><tbody id="monthly-table-body"></tbody></table></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <main id="tab-udara" class="tab-content" aria-label="Kualitas udara">
+      <section class="section">
+        <div class="section-heading-row"><div><h1 class="section-title">🌫️ Kualitas Udara</h1><p class="section-subtitle">AQI dan konsentrasi polutan dari snapshot halaman AccuWeather.</p></div><span class="data-badge data-badge-demo">Snapshot · bukan live</span></div>
+        <div class="feature-callout" role="note"><strong>Periksa waktu data:</strong> nilai di bawah dicocokkan dengan AccuWeather pada 12 Okt 2026 21:37 WIB dan tidak diperbarui otomatis. Untuk kondisi terkini, buka <a href="https://www.accuweather.com/id/id/klumprit/3454553/air-quality-index/3454553" target="_blank" rel="noopener noreferrer">halaman AQI resmi ↗</a>.</div>
+        <div class="air-quality-layout">
+          <div class="aqi-card">
+            <div class="aqi-gauge" id="aqi-gauge" role="img" aria-label="AccuWeather AQI snapshot: 205, Sangat Tidak Sehat, 12 Oktober 2026 21:37 WIB">
+              <div class="aqi-gauge-center"><span>AQI</span><strong id="aqi-value">205</strong><small id="aqi-category">Sangat Tidak Sehat</small></div>
+            </div>
+            <div class="aqi-explainer"><span class="eyebrow">AccuWeather AQI · <span id="aqi-updated">12 Okt 2026 21:37 WIB</span></span><h2 id="aqi-summary">Kualitas udara sangat tidak sehat</h2><p id="aqi-advice">Batasi kegiatan luar ruang; kelompok sensitif sebaiknya menghindari aktivitas luar.</p></div>
+          </div>
+          <div class="pollutant-card"><div class="section-heading-row"><div><h2>Rincian polutan</h2><p class="section-subtitle">Konsentrasi & sub-indeks yang terlihat di sumber snapshot.</p></div></div>
+            <div class="table-responsive"><table class="data-table pollutant-table"><thead><tr><th scope="col">Parameter</th><th scope="col">Konsentrasi</th><th scope="col">AQI polutan</th><th scope="col">Kategori</th></tr></thead><tbody id="pollutant-table-body"></tbody></table></div>
+          </div>
+        </div>
+        <div class="air-scale-card"><strong>Rentang kategori AQI AccuWeather</strong><div class="air-scale"><span class="scale-good">0–19<br>Bagus Sekali</span><span class="scale-moderate">20–49<br>Lumayan</span><span class="scale-poor">50–99<br>Buruk</span><span class="scale-unhealthy">100–149<br>Tidak Sehat</span><span class="scale-very-unhealthy">150–249<br>Sangat Tidak Sehat</span><span class="scale-hazardous">250+<br>Berbahaya</span></div><p>Rentang mengikuti skala yang ditampilkan pada halaman AccuWeather saat snapshot diperiksa.</p></div>
+      </section>
+    </main>
+
+    <main id="tab-aktivitas" class="tab-content" aria-label="Kesehatan dan aktivitas">
+      <section class="section">
+        <div class="section-heading-row"><div><h1 class="section-title">🏃 Kesehatan & Aktivitas</h1><p class="section-subtitle">Panduan berbasis cuaca & AQI snapshot; UV tidak tersedia pada halaman kondisi saat ini.</p></div><span class="data-badge data-badge-demo">Panduan umum</span></div>
+        <div class="feature-callout" role="note"><strong>Catatan keselamatan:</strong> skor aktivitas adalah heuristik, bukan saran medis. AQI pada snapshot bernilai 205 (Sangat Tidak Sehat); tunda aktivitas luar ruang dan cek pembaruan sumber resmi. Data snapshot tidak live.</div>
+        <div class="health-risk-grid" id="health-risk-grid"></div>
+        <section class="section section-inset"><div class="section-heading-row"><div><h2 class="section-title">Rekomendasi aktivitas</h2><p class="section-subtitle">Skor 0–100 yang dihitung dari faktor risiko contoh.</p></div><span class="score-legend">Skor tinggi = kondisi relatif lebih mendukung</span></div><div class="activity-grid" id="activity-grid"></div></section>
+        <div class="health-advice-card"><span aria-hidden="true">🛡️</span><div><strong>Praktik aman di luar ruang</strong><p>Periksa prakiraan aktual sebelum berangkat, cukup minum, cari tempat teduh saat UV tinggi, dan hentikan aktivitas bila merasa tidak sehat.</p></div></div>
+      </section>
+    </main>
+
+    <main id="tab-tentang" class="tab-content" aria-label="Tentang CuacaKu">
       <section class="section about-section">
         <div class="about-card">
-          <h2 class="section-title">ℹ️ Tentang Aplikasi Cuaca</h2>
+          <h1 class="section-title">ℹ️ Tentang CuacaKu</h1>
           <div class="about-content">
-            <div class="about-block">
-              <h3>🌤️ Apa itu CuacaKu?</h3>
-              <p>CuacaKu adalah aplikasi cuaca modern yang menyediakan informasi cuaca lengkap untuk wilayah <strong>Klumprit, Jawa Tengah, Indonesia</strong> dan sekitarnya. Data cuaca bersumber dari AccuWeather.</p>
-            </div>
-            <div class="about-block">
-              <h3>📍 Lokasi</h3>
-              <div class="location-map-info">
-                <div class="map-placeholder">
-                  <span>🗺️</span>
-                  <p>Klumprit, Jawa Tengah, Indonesia</p>
-                  <small>Kode Lokasi: 3454553</small>
-                </div>
-                <div class="nearby-places">
-                  <h4>Tempat Terdekat:</h4>
-                  <ul>
-                    <li>📍 Purwokerto, Jawa Tengah</li>
-                    <li>📍 Purwokerto Selatan, Jawa Tengah</li>
-                    <li>📍 Sokaraja, Jawa Tengah</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="about-block">
-              <h3>📊 Fitur Aplikasi</h3>
-              <div class="features-grid">
-                <div class="feature-item"><span>🌡️</span><p>Cuaca Saat Ini</p></div>
-                <div class="feature-item"><span>📅</span><p>Prakiraan 10 Hari</p></div>
-                <div class="feature-item"><span>🕐</span><p>Prakiraan Per Jam</p></div>
-                <div class="feature-item"><span>📊</span><p>Cuaca Bulanan</p></div>
-                <div class="feature-item"><span>📈</span><p>Grafik Interaktif</p></div>
-                <div class="feature-item"><span>⚠️</span><p>Peringatan Cuaca</p></div>
-                <div class="feature-item"><span>🎯</span><p>Indeks Kenyamanan</p></div>
-                <div class="feature-item"><span>🌙</span><p>Mode Gelap/Terang</p></div>
-              </div>
-            </div>
-            <div class="about-block">
-              <h3>🔗 Sumber Data</h3>
-              <p>Data cuaca bersumber dari <a href="https://www.accuweather.com/id/id/klumprit/3454553/october-weather/3454553" target="_blank" rel="noopener">AccuWeather.com</a></p>
-            </div>
-            <div class="about-block">
-              <h3>⚡ Teknologi</h3>
-              <div class="tech-tags">
-                <span class="tech-tag">HTML5</span>
-                <span class="tech-tag">CSS3</span>
-                <span class="tech-tag">Vanilla JavaScript</span>
-                <span class="tech-tag">Canvas API</span>
-                <span class="tech-tag">Responsive Design</span>
-                <span class="tech-tag">Zero Dependencies</span>
-              </div>
-            </div>
+            <div class="about-block"><h2>📍 Lokasi</h2><p>Dashboard demonstrasi untuk Klumprit, Jawa Tengah, Indonesia. Titik acuan: −7.42, 109.24 (perkiraan). Zona waktu: WIB (UTC+7).</p></div>
+            <div class="about-block"><h2>🧭 Fitur</h2><div class="features-grid">
+              <div class="feature-item"><span aria-hidden="true">🌡️</span><p>Cuaca saat ini (snapshot AccuWeather)</p></div><div class="feature-item"><span aria-hidden="true">📅</span><p>Prakiraan 10 hari</p></div><div class="feature-item"><span aria-hidden="true">🕐</span><p>Prakiraan per jam</p></div><div class="feature-item"><span aria-hidden="true">🌧️</span><p>MinuteCast simulasi</p></div><div class="feature-item"><span aria-hidden="true">🗺️</span><p>Radar skematis</p></div><div class="feature-item"><span aria-hidden="true">📊</span><p>Kalender & tren bulanan</p></div><div class="feature-item"><span aria-hidden="true">🌫️</span><p>AQI AccuWeather snapshot</p></div><div class="feature-item"><span aria-hidden="true">🏃</span><p>Indeks aktivitas heuristik</p></div>
+            </div></div>
+            <div class="about-block"><h2>⚠️ Tentang data</h2><p>Repository ini tidak memiliki kunci API atau feed pengamatan. Kondisi saat ini, prakiraan 10 hari, jam yang tersedia, dan kualitas udara dicocokkan manual dari halaman AccuWeather untuk Klumprit pada 12 Oktober 2026 pukul 21:37 WIB. Ini snapshot historis yang tidak diperbarui otomatis. Radar, MinuteCast, dan kalender bulanan adalah simulasi/dataset lokal; skor kesehatan bukan diagnosis atau nasihat medis.</p><p class="about-source">Gunakan tautan resmi untuk informasi live: <a href="https://www.accuweather.com/id/id/klumprit/3454553/current-weather/3454553" target="_blank" rel="noopener noreferrer">Cuaca saat ini</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/10-day-weather-forecast/3454553" target="_blank" rel="noopener noreferrer">10 hari</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/weather-radar/3454553" target="_blank" rel="noopener noreferrer">Radar</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/minute-weather-forecast/3454553" target="_blank" rel="noopener noreferrer">MinuteCast</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/october-weather/3454553" target="_blank" rel="noopener noreferrer">Per bulan</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/air-quality-index/3454553" target="_blank" rel="noopener noreferrer">Kualitas udara</a> · <a href="https://www.accuweather.com/id/id/klumprit/3454553/health-activities/3454553" target="_blank" rel="noopener noreferrer">Kesehatan & aktivitas</a>.</p></div>
+            <div class="about-block"><h2>⚙️ Teknologi</h2><div class="tech-tags"><span class="tech-tag">HTML5</span><span class="tech-tag">CSS3</span><span class="tech-tag">Vanilla JavaScript</span><span class="tech-tag">Canvas API</span><span class="tech-tag">Tanpa dependensi runtime</span><span class="tech-tag">Responsive</span></div></div>
           </div>
         </div>
       </section>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
-      <div class="footer-inner">
-        <p>© 2026 CuacaKu — Aplikasi Cuaca Klumprit</p>
-        <p class="footer-small">Data bersumber dari AccuWeather · Terakhir diperbarui: 12 Oktober 2026</p>
-      </div>
+      <div class="footer-inner"><p>© 2026 CuacaKu — Dashboard demonstrasi Klumprit</p><p class="footer-small" id="footer-data-note">Snapshot cuaca & AQI AccuWeather (12 Okt 2026, 21:37 WIB) · radar, MinuteCast, dan data bulanan berupa simulasi/contoh · tidak live.</p></div>
     </footer>
   </div>
 
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
   <script src="js/charts.js"></script>
+  <script src="js/radar.js"></script>
 </body>
 </html>
