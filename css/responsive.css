@@ -1,0 +1,150 @@
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .current-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .comfort-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .monthly-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .location-map-info {
+    grid-template-columns: 1fr;
+  }
+  .daily-item {
+    grid-template-columns: 100px 40px 1fr 80px 80px 100px;
+    padding: 14px 16px;
+    gap: 10px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .nav-tabs { display: none; }
+  .header-actions { display: none; }
+  .hamburger { display: flex; }
+
+  .hero { padding: 32px 16px 28px; }
+  .location-name { font-size: 1.3rem; }
+  .current-temp { font-size: 3.5rem; }
+  .current-icon { width: 60px; height: 60px; }
+  .current-desc { font-size: 1.1rem; }
+
+  .current-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .detail-card { padding: 12px; }
+  .detail-icon { font-size: 1.3rem; }
+  .detail-label { font-size: 0.7rem; }
+  .detail-value { font-size: 0.85rem; }
+
+  .section { padding: 24px 16px; }
+  .section-title { font-size: 1.1rem; }
+
+  .forecast-card { min-width: 120px; padding: 14px 12px; }
+
+  .comfort-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .comfort-gauge { width: 64px; height: 64px; }
+  .comfort-val { font-size: 1rem; }
+
+  .daily-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+  .daily-date-col { align-items: center; }
+  .daily-icon { margin: 0 auto; }
+  .daily-item .daily-high:not(.daily-temps-mobile .daily-high),
+  .daily-item .daily-low:not(.daily-temps-mobile .daily-low),
+  .daily-item .daily-bar { display: none; }
+  .daily-temps-mobile {
+    display: flex !important;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .monthly-summary { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .summary-card { padding: 14px; }
+  .summary-icon { font-size: 1.6rem; }
+  .summary-value { font-size: 1.2rem; }
+
+  .monthly-calendar { gap: 4px; }
+  .cal-day { padding: 6px 2px; min-height: 60px; }
+  .cal-day-icon { width: 22px; height: 22px; }
+  .cal-day-num { font-size: 0.75rem; }
+  .cal-day-temps { font-size: 0.6rem; }
+
+  .chart-container { padding: 16px 12px; }
+  .chart-container canvas { min-width: 600px; }
+
+  .data-table th, .data-table td { padding: 10px 12px; font-size: 0.8rem; }
+
+  .about-card { padding: 20px; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .feature-item { padding: 12px; }
+  .feature-item span { font-size: 1.4rem; }
+
+  .hourly-item { min-width: 76px; padding: 10px 6px; }
+  .hourly-icon { width: 30px; height: 30px; }
+  .hourly-temp { font-size: 0.9rem; }
+
+  .alert-card { flex-direction: column; gap: 8px; padding: 14px; }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .current-temp { font-size: 2.8rem; }
+  .current-temp-wrap { gap: 10px; }
+  .current-icon { width: 48px; height: 48px; }
+
+  .current-details-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .detail-card { padding: 10px 8px; }
+
+  .forecast-card { min-width: 100px; padding: 12px 8px; }
+  .forecast-day { font-size: 0.7rem; }
+  .forecast-date { font-size: 0.95rem; }
+  .forecast-icon { width: 36px; height: 36px; }
+  .forecast-temps { font-size: 0.85rem; }
+
+  .comfort-grid { gap: 8px; }
+  .comfort-gauge { width: 56px; height: 56px; }
+  .comfort-val { font-size: 0.9rem; }
+  .comfort-label { font-size: 0.7rem; }
+
+  .monthly-summary { gap: 8px; }
+  .summary-card { padding: 12px 8px; }
+
+  .location-map-info { grid-template-columns: 1fr; }
+
+  .hourly-item { min-width: 68px; }
+
+  .mobile-nav .nav-tab { font-size: 0.85rem; padding: 10px 14px; }
+}
+
+/* Large Desktop */
+@media (min-width: 1400px) {
+  .current-details-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .comfort-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Print */
+@media print {
+  .header, .footer, .hamburger, .mobile-nav, .header-actions { display: none !important; }
+  .tab-content { display: block !important; }
+  body { background: #fff; color: #000; }
+  .hero-bg { background: #f0f0f0 !important; }
+  .section { page-break-inside: avoid; }
+}
