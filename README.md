@@ -1,57 +1,72 @@
 # CuacaKu — Dashboard Cuaca Klumprit
 
-Dashboard cuaca responsif untuk Klumprit, Jawa Tengah, dibuat dengan HTML, CSS, dan JavaScript vanilla tanpa dependensi runtime. Cuaca saat ini, prakiraan, dan kualitas udara di bundel ini dicocokkan manual dengan halaman AccuWeather; aplikasi **tidak** memuat feed atau API live.
+Dashboard cuaca responsif untuk Klumprit, Jawa Tengah: HTML, CSS, dan JavaScript vanilla plus satu file server Node.js kecil sebagai **proxy OpenWeather**. API key hanya hidup di environment variable server; browser hanya bicara dengan endpoint same-origin `/api/weather`.
 
 ## Fitur
 
 - Kondisi saat ini, peringatan, dan prakiraan ringkas 5 hari.
-- **Prakiraan 10 Hari** dengan detail harian, rentang suhu, hujan, angin, serta nilai kelembapan/UV yang tersedia.
-- Prakiraan per jam untuk sisa malam 12 Oktober dan 24 jam pada 13 Oktober 2026.
-- **Kualitas Udara** dengan AccuWeather AQI, kategori sumber, konsentrasi polutan, sub-indeks, timestamp, dan saran kehati-hatian.
+- **Prakiraan 10 Hari** dengan detail harian, rentang suhu, hujan, angin, kelembapan, dan UV yang tersedia.
+- Prakiraan per jam (48 jam ke depan saat One Call 4.0 aktif; fallback 5 hari/3 jam tanpa One Call).
+- **MinuteCast / 1-minute timeline** (60 menit ke depan saat One Call 4.0 aktif).
+- **Kualitas Udara** dengan AQI OpenWeather (skala 1–5), konsentrasi PM2.5, PM10, NO₂, O₃, SO₂, CO, dan saran kehati-hatian.
 - **Kesehatan & Aktivitas** dengan faktor cuaca/AQI dan skor heuristik; data UV yang hilang tidak diperlakukan sebagai UV nol.
-- **MinuteCast** ilustratif dengan pilihan jendela 30, 60, dan 120 menit.
-- **Radar** skematis dengan timeline simulasi, play/pause, layer, drag, zoom, dan reset.
-- **Per Bulan** dengan kalender, ringkasan, tabel, grafik suhu/hujan, dan pemilih bulan.
+- **Radar** skematis dengan timeline, play/pause, layer, drag, zoom, dan reset (tetap simulasi — lihat batasan).
+- **Per Bulan** dengan kalender, ringkasan, tabel, dan grafik (data contoh lokal).
 - Satuan **Celsius sebagai default**; pengguna dapat beralih ke Fahrenheit dan preferensi disimpan di `localStorage`.
-- Navigasi dan kontrol responsif untuk layar kecil.
+- Navigasi dan kontrol responsif untuk laptop, PC, HP, tablet, dan iPhone (hingga 360px + safe area).
 
-## Sumber dan batasan data
+## Arsitektur data
 
-Kondisi saat ini, prakiraan 10 hari, jam yang tersedia, dan AQI dicocokkan manual terhadap halaman AccuWeather untuk Klumprit (location key `3454553`) pada **12 Oktober 2026, pukul 21:37 WIB**. Nilai itu adalah snapshot bertimestamp, bukan kondisi yang terus diperbarui. Temperatur sumber disimpan dalam Fahrenheit dan diformat ke Celsius di antarmuka secara default; misalnya 76°F ditampilkan sebagai **24°C**.
+```
+Browser (app.js) ── same-origin ──> server.js ── HTTPS + API key ──> OpenWeather API
+                                       │
+                                       └─ cache 10 menit (satu cache untuk semua modul)
+```
 
-- Kelembapan pada ringkasan prakiraan 10 hari dan indeks UV kondisi saat ini tidak tersedia; UI menampilkan `—`/“Tidak tersedia”, bukan nilai rekaan.
-- Halaman per jam hari ini hanya menyisakan entri 22:00 dan 23:00 karena snapshot diperiksa pukul 21:37. Data esok hari mencakup 00:00–23:00.
-- Angka kualitas udara menggunakan **AccuWeather AQI**, bukan ISPU Indonesia. Kategori dan nilai polutan adalah cuplikan dari halaman sumber pada timestamp tersebut.
-- Radar dan MinuteCast adalah simulasi/ilustrasi lokal, bukan radar atau nowcast aktual. Dataset kalender bulanan hanya contoh lokal untuk Oktober 2026 dan tidak bersumber dari snapshot prakiraan 10 hari.
-- Skor aktivitas adalah heuristik antarmuka, bukan penilaian medis atau jaminan keselamatan. Ikuti pengumuman otoritas dan periksa sumber resmi sebelum mengambil keputusan.
-
-Tautan sumber resmi ditampilkan di dalam aplikasi dan dicatat pada `js/data.js`. Cuaca saat ini: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/current-weather/3454553) · 10 hari: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/10-day-weather-forecast/3454553) · kualitas udara: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/air-quality-index/3454553).
-
-### Sinkronisasi realtime
-
-Belum ada koneksi realtime di repository ini. Memeriksa halaman web AccuWeather tiap beberapa detik bukan metode sinkronisasi yang andal: HTML bukan kontrak API, browser tidak mendapat akses CORS yang dijamin, markup dapat berubah, dan polling agresif dapat dibatasi. Sebagai ilustrasi, polling satu endpoint setiap 5 detik berarti **17.280 permintaan per hari** sebelum menghitung fitur lain.
-
-Integrasi live harus memakai [AccuWeather Developer API](https://developer.accuweather.com/documentation/overview), menyimpan key sebagai secret backend (bukan di JavaScript publik), dan mengikuti kuota serta entitlement produk. MinuteCast memiliki produk API tersendiri; rincian AQI/polutan juga bergantung pada endpoint/aksesnya. API key atau subscription belum disediakan untuk proyek ini, jadi UI secara eksplisit tidak mengklaim data live.
+- **Live:** `server.js` mengambil Current Weather, One Call 4.0 (current/1min/1h/1day), dan Air Pollution API, lalu menormalkannya ke payload tunggal `/api/weather`. UI melakukan polling ringan sekitar **setiap 10 menit** — mengikuti periode update model OpenWeather, bukan setiap detik. Kunci API **tidak pernah** dikirim ke browser.
+- **Fallback:** bila key belum dikonfigurasi / langganan belum aktif / jaringan bermasalah, UI menampilkan `js/data.js` (snapshot lokal 12 Okt 2026 yang ditandai jelas sebagai *fallback lokal · bukan live*), lengkap dengan banner status. Tidak ada angka palsu yang diklaim live.
+- **Produk yang butuh langganan terpisah** dilaporkan apa adanya di `payload.provider.modules`: One Call 4.0 (minute forecast, UV, 10 hari, timeline per bulan) dan Weather Maps/Global Precipitation Maps (peta hujan) — endpoint dasar tetap hidup tanpa One Call.
 
 ## Menjalankan lokal
 
-Dari root repository:
+Prasyarat: Node.js 20+ dan sebuah API key OpenWeather (free tier 1.000 panggilan/hari untuk One Call 4.0 setelah subscribe "One Call by Call" — tanpa subscribe, endpoint dasar tetap berfungsi).
 
 ```sh
-python3 -m http.server 8000 --bind 0.0.0.0
+cp .env.example .env      # isi OPENWEATHER_API_KEY=...
+node --env-file=.env server.js
+# atau: OPENWEATHER_API_KEY=kunci-anda node server.js
 ```
 
-Lalu buka `http://localhost:8000`. Semua aset aplikasi lokal; koneksi internet hanya digunakan untuk font web opsional dan membuka tautan sumber.
+Lalu buka `http://localhost:8000`. Tanpa `.env`, server tetap berjalan dan UI memakai fallback lokal yang ditandai jelas.
+
+## Variabel lingkungan
+
+| Variabel | Default | Keterangan |
+| --- | --- | --- |
+| `OPENWEATHER_API_KEY` | *(kosong)* | Kunci OpenWeather. **Wajib rahasia** — jangan commit, jangan taruh di client. |
+| `OPENWEATHER_LAT` / `OPENWEATHER_LON` | `-7.42` / `109.24` | Koordinat Klumprit. |
+| `OPENWEATHER_REFRESH_SECONDS` | `600` | Interval cache server (minimum 600 detik). |
+| `OPENWEATHER_ONE_CALL_ENABLED` | `true` | Nonaktifkan bila tidak subscribe One Call. |
+| `PORT` / `HOST` | `8000` / `0.0.0.0` | Bind server. |
+
+## Deployment
+
+Deploy di host Node.js apa pun (Railway, Render, Fly.io, VPS, dsb.) dengan perintah `node server.js`, lalu set `OPENWEATHER_API_KEY` sebagai **secret** di platform tersebut. Repo ini tidak menyimpan key; `.env` masuk `.gitignore`. Catatan: GitHub Pages hanya melayani file statis — tanpa server Node, UI berjalan dalam mode fallback lokal.
 
 ## Pemeriksaan
 
 ```sh
-node --test tests/weather-data.test.js
-node --check js/data.js
-node --check js/app.js
-node --check js/charts.js
-node --check js/radar.js
+node --test tests/*.test.js    # 23 tes: data, normalisasi, keamanan key, e2e proxy
+node --check js/data.js js/app.js js/charts.js js/radar.js server.js
 git diff --check
 ```
 
-Lihat [`AUDIT.md`](AUDIT.md) untuk temuan audit, verifikasi yang dilakukan, batasan yang masih ada, dan kebutuhan sebelum integrasi produksi/live.
+## Batasan yang jujur
+
+- **Radar** tetap simulasi skematis. Peta presipitasi OpenWeather (Weather Maps 1.0 / Global Precipitation Maps) membutuhkan produk/subscription yang terpisah; hingga tersedia, tampilan radar ditandai "Bukan radar live".
+- **Kalender Per Bulan** memakai data contoh lokal untuk Oktober 2026 (ada 1 hari yang diketahui kosong). Timeline per bulan otomatis memerlukan akses One Call 4.0.
+- Satuan internal mengikuti pipeline Fahrenheit dari API (units imperial) lalu diformat ke Celsius oleh UI; angin dikonversi ke km/jam.
+- Skor kesehatan/aktivitas adalah heuristik antarmuka, bukan penilaian medis.
+- AQI OpenWeather memakai skala 1–5 (Baik → Sangat Buruk); ini **bukan ISPU** Indonesia. Untuk keputusan kesehatan resmi gunakan ISPU KLHK/otoritas setempat.
+
+Lihat [`AUDIT.md`](AUDIT.md) untuk temuan audit, hasil verifikasi, dan status integrasi live.

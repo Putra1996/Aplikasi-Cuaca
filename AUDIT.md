@@ -1,75 +1,60 @@
-# Audit mendalam CuacaKu
+# AUDIT — CuacaKu (Klumprit, Jawa Tengah)
 
-**Tanggal:** 12 Oktober 2026
+Tanggal audit: 12 Oktober 2026 · Branch `arena/94271b44-aplikasi-cuaca`
 
-**Cakupan:** konsistensi sumber dan satuan cuaca, kelengkapan/null data, AQI, fitur, navigasi, HTML, aksesibilitas dasar, responsivitas, dan pemeriksaan kode.
+## Ringkasan status
 
-**Lokasi snapshot:** Klumprit, Jawa Tengah · AccuWeather location key `3454553`.
+| Aspek | Status |
+| --- | --- |
+| Sumber data live | ✅ OpenWeather via proxy `server.js` (One Call 4.0 + Current + 5-day/3-hour + Air Pollution) |
+| Keamanan API key | ✅ Environment variable server-side; key tidak pernah masuk HTML/JS/JSON publik; `.env` di-gitignore |
+| Interval refresh | ✅ Cache server 10 menit + polling UI setelahnya — sesuai anjuran update model OpenWeather |
+| Fallback offline | ✅ `js/data.js` snapshot lokal yang ditandai jelas "fallback lokal · bukan live" |
+| Fitur 10 Hari / Per Jam / Minute / Udara / Aktivitas | ✅ Live dengan degradasi jujur per modul |
+| Radar | ⚠️ Tetap simulasi — Weather Maps/Global Precipitation Maps butuh produk terpisah |
+| Per Bulan | ⚠️ Data contoh lokal Oktober 2026; timeline per bulan butuh One Call 4.0 |
+| Responsivitas | ✅ Breakpoint 1200/900/768/480/360px, wrapping, scroll lokal, safe-area iPhone; belum uji fisik |
 
-## Ringkasan eksekutif
+## Alur sinkronisasi
 
-Audit sumber menemukan ketidaksesuaian utama: kondisi AccuWeather menunjukkan **76°F (24,4°C)** pada 12 Oktober 2026 pukul **21:37 WIB**, tetapi aplikasi sebelumnya memakai 86°F dan menampilkan sekitar **30°C**. Data kondisi saat ini, prakiraan 10 hari, entri jam yang tersedia, dan kualitas udara sekarang dicocokkan ulang sebagai satu snapshot bertimestamp. Aplikasi menampilkan 76°F sebagai **24°C** pada satuan Celsius.
+1. `server.js` memuat `OPENWEATHER_API_KEY` dari environment (via `.env` lokal atau secret platform).
+2. Setiap permintaan `/api/weather`, server mengambil:
+   - `GET /data/4.0/onecall/current` (1 record)
+   - `GET /data/4.0/onecall/timeline/1min` (≤60 record)
+   - `GET /data/4.0/onecall/timeline/1h` (≤20 record/halaman, maks. 3 halaman)
+   - `GET /data/4.0/onecall/timeline/1day` (≤10 record)
+   - `GET /data/2.5/air_pollution`
+3. Hasil dinormalkan ke payload tunggal (suhu imperial dari API → UI memformat Celsius/Fahrenheit) dan di-cache **10 menit** untuk semua klien.
+4. Bila One Call ditolak (401/403 = belum subscribe), server otomatis turun ke `GET /data/2.5/weather` + `GET /data/2.5/forecast` (5 hari / langkah 3 jam). Modul yang tidak tersedia **tidak dipalsukan** — `provider.modules.<modul>.live=false` + `error`.
+5. UI (`js/app.js`) memanggil `/api/weather` saat load dan saat tombol refresh, menggabungkan payload ke `WEATHER_DATA` tanpa menyentuh data bulanan/radar lokal, lalu memperbarui banner status.
 
-Aplikasi tidak menarik data cuaca live. Cuaca/AQI adalah snapshot yang dicocokkan manual dan tautan sumber disediakan; radar, MinuteCast, dan kalender bulanan tetap diberi label sebagai simulasi/contoh lokal. Kualitas udara menggunakan skala **AccuWeather AQI**, bukan ISPU. Nilai yang tidak ada di sumber tidak lagi diisi dengan angka rekaan.
+Catatan interval: model One Call 4.0 diperbarui setiap 10 menit; polling tiap beberapa detik tidak menambah kesegaran dan memboroskan kuota (1.000 call/hari gratis untuk One Call). Keputusan: cache 600 detik.
 
-## Audit data sumber
+## Keamanan key
 
-| Bagian | Hasil audit dan perlakuan |
-|---|---|
-| Kondisi saat ini | 76°F → 24°C; RealFeel 81°F → 27°C; kelembapan 91%; angin 8 mph → 13 km/jam dengan gust 14 mph → 23 km/jam; visibilitas 6 mil → 9,7 km; peluang hujan malam 6%; sunrise 05:22 dan sunset 17:36 WIB. |
-| Prakiraan 10 hari | Nilai tinggi/rendah, kondisi, peluang hujan, angin, dan UV disinkronkan untuk 12–21 Oktober 2026. Nilai Fahrenheit sumber dikonversi hanya saat ditampilkan. Kelembapan yang tidak tersedia pada ringkasan sumber bernilai `null` dan ditampilkan `—`; UV hari ini juga tidak tersedia. |
-| Prakiraan per jam | Snapshot hari ini diambil pukul 21:37 sehingga hanya jam 22:00 dan 23:00 yang tersisa. Prakiraan hari berikutnya berisi 00:00–23:00. Kedua tanggal tidak dipaksakan memiliki jumlah sampel yang sama. |
-| Kualitas udara | AQI 205, kategori **Sangat Tidak Sehat**, beserta enam konsentrasi dan sub-indeks polutan. Label/skala UI diubah dari ISPU lama ke AccuWeather AQI. Timestamp snapshot dan tautan halaman sumber terlihat di UI. |
-| Radar dan MinuteCast | Bingkai radar dan peluang MinuteCast bukan hasil sensor/API. Keduanya tetap simulasi lokal, diberi keterangan bukan data live; label bingkai radar juga menyebut simulasi. |
-| Bulanan | Dataset lokal Oktober 2026 bukan bagian dari snapshot prakiraan 10 hari. Data ini tetap ditandai contoh, hanya bulan yang tersedia ditampilkan, dan tanggal tanpa nilai dipertahankan sebagai kosong. |
+- Kunci yang diberikan pengguna **tidak ditulis ke file mana pun di repo**; hanya dipakai sebagai environment variable saat menjalankan server.
+- `server.js` tidak meminta/mengembalikan URL berisi `appid` ke klien (body error provider tidak diteruskan; URL `next` disaring ke host `api.openweathermap.org` saja dan `appid` ditulis ulang dari env).
+- Tes statis memastikan string key dan `appid=` tidak muncul di `index.html`, `js/*.js`, atau respons `/api/health`.
+- Traversal path (`/../.env`, file titik) ditolak oleh static handler.
+- Rekomendasi produksi: **rotate key** bila key pernah tampil di chat/log publik, lalu simpan hanya di secret manager platform deploy.
 
-Snapshot dan URL asal dicatat di `js/data.js`; penjelasan keterbatasan ada di banner, halaman fitur, README, dan audit ini. Snapshot tidak diperbarui otomatis dan bukan dasar tunggal untuk keputusan kesehatan atau perjalanan.
+## Hasil verifikasi (12 Okt 2026)
 
-## Temuan penting dan perbaikan
+- `node --test tests/*.test.js` — **23/23 lulus** (10 tes data/responsif + 11 tes server/keamanan + 2 tes e2e proxy dengan mock OpenWeather).
+- `node --check` untuk `server.js`, `js/data.js`, `js/app.js`, `js/charts.js`, `js/radar.js` lulus.
+- E2E membuktikan: payload One Call 4.0 → live UI shape (suhu, 10 hari, minutely, AQI 1–5); dan jalur degradasi tanpa One Call → `Current Weather Data API` + `5-day/3-hour` dengan `minuteCast.live=false`, `airQuality.error`, tanpa data rekaan.
+- `git diff --check` lulus; HTML: ID unik, aset lokal tersedia, tautan eksternal `rel="noopener noreferrer"`.
 
-| Prioritas | Temuan | Perbaikan |
-|---|---|---|
-| **Kritis untuk akurasi** | Suhu saat ini 30°C berbeda dari 24°C pada halaman sumber; data lama memakai angka/label yang tidak sinkron. | Kondisi saat ini dan data prakiraan terkait diganti ke snapshot 12 Okt 2026 21:37 WIB; konversi Fahrenheit → Celsius diuji. |
-| **Tinggi** | Label “ISPU” dipakai untuk angka AQI AccuWeather sehingga skala dan kategorinya dapat disalahartikan. | Label, panduan kategori, tabel polutan, ringkasan, dan fitur kesehatan menggunakan istilah AccuWeather AQI. |
-| **Tinggi** | Nilai yang tidak tersedia sebelumnya dapat terlihat seolah-olah terukur; data per jam dianggap selalu 24 entri. | UV saat ini dan kelembapan prakiraan yang hilang menjadi `null`/“Tidak tersedia”; renderer mempertahankan nilai kosong; tes membedakan 2 jam tersisa hari ini dari 24 jam esok. |
-| **Tinggi** | Timestamp dan status simulasi kurang tegas sehingga data statis berisiko dianggap live. | Banner global menyatakan waktu snapshot; kondisi, AQI, prakiraan, README, dan halaman Tentang menjelaskan bahwa tidak ada refresh API. Tombol refresh hanya menggambar ulang. |
-| **Tinggi** | Skor aktivitas menganggap UV hilang sama dengan UV nol dan tidak mencerminkan AQI sangat tidak sehat. | UV hilang diberi penalti konservatif dan diungkapkan. Saran mengutamakan menunda aktivitas luar ruang saat AQI snapshot sangat tidak sehat; skor diberi disclaimer nonmedis. |
-| **Sedang** | Prakiraan hari ini/esok tidak memiliki cakupan jam simetris. | Label tab kini menjelaskan sisa malam 12 Okt dan tanggal 13 Okt; jumlah entri sumber asli dipertahankan. |
-| **Sedang** | Radar sintetis bisa terlihat seperti jejak observasi menit sebelumnya. | Panel diberi badge bukan radar live dan label timeline/bingkai secara eksplisit menyebut simulasi. |
-| **Sedang** | Judul panjang, tabel, header ponsel, dan konten tepi layar berisiko terpotong pada lebar sempit/notch iPhone. | Menu ringkas mulai 1200px, breakpoint hingga 360px, pembungkusan judul/label, scroll lokal untuk tabel/timeline, `viewport-fit=cover`, dan safe-area/dynamic viewport CSS ditambahkan. |
+## Batasan yang tersisa
 
-## Status permintaan realtime
+1. **Radar live** belum ada: butuh langganan Weather Maps / Global Precipitation Maps (produk terpisah, sebagian di paket Developer+). UI tetap menandai simulasi.
+2. **Timeline per bulan** otomatis butuh paginasi One Call 4.0 (`/data/4.0/onecall/timeline/1day?start=…&cnt=…` per bulan) — belum diminta per bulan untuk menghemat kuota; kalender memakai contoh lokal.
+3. **AQI ≠ ISPU**: skala OpenWeather 1–5; untuk konteks Indonesia tetap rujuk ISPU KLHK.
+4. **Uji visual perangkat fisik** (HP/iPhone/tablet) belum dilakukan; aturan responsif diverifikasi statis + smoke DOM.
+5. Akses jaringan sandbox pengembangan ini memblokir `api.openweathermap.org`, sehingga uji live dilakukan terhadap mock provider lokal; jalur kode identik dengan produksi.
 
-Permintaan polling halaman AccuWeather setiap beberapa detik **belum diterapkan**. Halaman web bukan kontrak API stabil; polling HTML rapat rapuh terhadap perubahan markup dan dapat memicu pembatasan. Membuat `setInterval` yang sekadar merender ulang snapshot akan menampilkan data lama seolah-olah baru, jadi itu sengaja tidak dilakukan.
+## Prasyarat publikasi
 
-Sinkronisasi yang benar memerlukan [AccuWeather Developer API](https://developer.accuweather.com/documentation/overview), entitlement untuk tiap produk (Core Weather, MinuteCast, AQI/Imagery), key server-side, dan backend/serverless yang menahan key. [Dokumentasi autentikasi](https://developer.accuweather.com/documentation/authentication) mengharuskan API key; MinuteCast dan beberapa data premium punya akses/kuota tersendiri. Belum ada key, subscription entitlement, atau host backend yang disediakan, sehingga aplikasi masih menyatakan dengan jelas bahwa snapshot 12 Okt 2026 bukan realtime.
-
-## Cakupan fitur
-
-- **10 Hari:** 10 tanggal berurutan, detail harian yang dapat dibuka, rentang suhu, peluang hujan, angin, nilai UV/kelembapan jika tersedia, dan grafik suhu.
-- **Radar:** kanvas peta skematis, tujuh bingkai lokal, timeline, play/pause, pilihan layer, geser, zoom, dan reset. Tidak mengambil radar atau tile eksternal.
-- **MinuteCast®:** visualisasi peluang presipitasi per 5 menit untuk jendela 30/60/120 menit; bukan nowcast aktual.
-- **Per Bulan:** pemilih bulan, kalender, ringkasan, tabel, dan grafik suhu/peluang hujan. Hanya contoh Oktober 2026 yang tersedia.
-- **Kualitas Udara:** AccuWeather AQI, kategori, timestamp, saran kehati-hatian, serta konsentrasi dan sub-indeks PM2.5/PM10/NO₂/O₃/SO₂/CO.
-- **Kesehatan & Aktivitas:** indikator UV/RealFeel/AQI/hujan dan skor heuristik empat aktivitas dengan penanganan data hilang.
-- **Suhu:** Celsius adalah satuan awal; tombol °C/°F tersedia pada desktop dan seluler dan preferensi disimpan jika storage diizinkan.
-- **Responsif:** menu hamburger pada lebar ≤1200px; grid/heading menyesuaikan hingga 360px; tabel, timeline, dan grafik memiliki area gulir lokal; viewport iPhone memakai safe-area inset.
-
-## Verifikasi
-
-Pemeriksaan final pada checkout ini lulus:
-
-- `node --test tests/weather-data.test.js` — **10/10 lulus**, termasuk aturan responsive/safe-area, metadata sumber, snapshot suhu 24°C, default Celsius, sepuluh tanggal, jam parsial vs penuh, null handling, AQI/polutan, batasan dataset bulanan, simulasi radar/MinuteCast, tautan, dan tab fitur.
-- `node --check js/data.js`, `js/app.js`, `js/charts.js`, `js/radar.js` — seluruhnya lulus.
-- `git diff --check` — lulus.
-- Parser struktur HTML — **89 ID unik**, 7 aset script/style lokal ada, dan 11 tautan `target="_blank"` memakai `noopener noreferrer`.
-- Smoke test DOM menggunakan Happy DOM — tampilan 24°C/RealFeel 27°C, AQI 205, 10 hari, dua jam tersisa, enam polutan, empat aktivitas, dan default Celsius terverifikasi. Interaksi °C/°F desktop/seluler, dua tab jam, navigasi AQI/radar, putar/jeda simulasi radar, empty state/reset bulan, serta tombol refresh (tanpa fetch data baru) juga lulus.
-- Server preview mengembalikan HTTP 200 untuk HTML, CSS fitur, dan semua berkas JavaScript aplikasi.
-
-## Risiko tersisa / prasyarat produksi
-
-1. **Bukan feed live.** Snapshot dapat usang segera setelah diperiksa. Integrasi produksi perlu provider dan lisensi yang sesuai, backend/proxy untuk kredensial, timeout, fallback, batas kuota, serta status usia data.
-2. **AQI snapshot bukan pemantauan lokal real-time.** Ambang/kategori harus selalu dijelaskan sesuai sumber; jangan menyebutnya ISPU atau menggantikan arahan otoritas Indonesia.
-3. **Radar, MinuteCast, dan data bulanan masih contoh.** Jangan menggunakan ketiganya untuk keputusan. Produksi memerlukan sumber yang sah, sinkronisasi waktu, atribusi, dan cakupan geografis tervalidasi.
-4. **Titik koordinat lokasi diwarisi dari repository (`−7.42, 109.24`, perkiraan).** Verifikasi koordinat Klumprit yang tepat sebelum menggunakannya untuk produk lokasi presisi.
-5. Belum ada pengujian browser/E2E permanen, monitoring, maupun evaluasi aksesibilitas manual pada perangkat fisik. Tes Node dan smoke test tidak menggantikan uji lintas-browser.
+- Host Node.js (Railway/Render/Fly.io/VPS) dengan `OPENWEATHER_API_KEY` sebagai secret dan perintah `node server.js`.
+- Subscribe "One Call by Call" di akun OpenWeather (1.000 call/hari gratis) untuk minute forecast, UV, dan prakiraan 10 hari; endpoint dasar tetap jalan tanpa subscribe.
+- Setelah deploy, verifikasi `/api/health` (`configured: true`) dan `/api/weather` (`meta.live: true`) sebelum mengumumkan fitur live.

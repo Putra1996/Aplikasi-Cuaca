@@ -1,25 +1,38 @@
 /**
- * Snapshot cuaca Klumprit yang dicocokkan manual dengan halaman AccuWeather.
- * Data current, 10 hari, jam yang tersedia, dan AQI diperiksa 12 Okt 2026 21:37 WIB.
- * Ini snapshot bertimestamp, bukan koneksi API/live refresh. Radar, MinuteCast,
+ * Fallback lokal CuacaKu — snapshot AccuWeather bertimestamp (12 Okt 2026, 21:37 WIB).
+ * Data ini HANYA dipakai bila server belum mengembalikan payload OpenWeather
+ * (lihat server.js → /api/weather). Bukan feed live. Radar, MinuteCast,
  * dan data bulanan tetap berstatus simulasi lokal.
  */
 
 const WEATHER_DATA = {
   meta: {
-    source: "AccuWeather web snapshot (dicocokkan manual)",
+    source: "Fallback lokal · snapshot AccuWeather (bukan live)",
     live: false,
     temperatureUnit: "F",
     snapshotDate: "2026-10-12",
     snapshotTime: "21:37",
     snapshotTimezone: "WIB",
     snapshotLabel: "12 Oktober 2026, 21:37 WIB",
-    currentWeatherUrl: "https://www.accuweather.com/id/id/klumprit/3454553/current-weather/3454553",
-    weatherUrl: "https://www.accuweather.com/id/id/klumprit/3454553/weather-forecast/3454553",
-    dailyForecastUrl: "https://www.accuweather.com/id/id/klumprit/3454553/10-day-weather-forecast/3454553",
-    hourlyTodayUrl: "https://www.accuweather.com/id/id/klumprit/3454553/hourly-weather-forecast/3454553",
-    hourlyTomorrowUrl: "https://www.accuweather.com/id/id/klumprit/3454553/hourly-weather-forecast/3454553?day=2",
-    airQualityUrl: "https://www.accuweather.com/id/id/klumprit/3454553/air-quality-index/3454553"
+    currentWeatherUrl: "https://openweathermap.org/current",
+    weatherUrl: "https://openweathermap.org/forecast5",
+    dailyForecastUrl: "https://openweathermap.org/api/one-call-4",
+    hourlyTodayUrl: "https://openweathermap.org/api/one-call-4",
+    hourlyTomorrowUrl: "https://openweathermap.org/api/one-call-4",
+    airQualityUrl: "https://openweathermap.org/api/air-pollution"
+  },
+  provider: {
+    name: "Fallback lokal",
+    refreshIntervalSeconds: 600,
+    modules: {
+      current: { live: false, product: "Fallback lokal" },
+      dailyForecast: { live: false, days: 10, product: "Fallback lokal" },
+      hourlyForecast: { live: false, intervalMinutes: null, product: "Fallback lokal" },
+      minuteCast: { live: false, product: "Simulasi lokal" },
+      airQuality: { live: false, product: "Fallback lokal", error: null },
+      monthly: { live: false, product: "Data contoh lokal" },
+      radar: { live: false, product: "Simulasi lokal" }
+    }
   },
 
   location: {
