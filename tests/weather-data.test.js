@@ -1,0 +1,172 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const source = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+const WEATHER_DATA = vm.runInNewContext(source + '\nWEATHER_DATA;', {});
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const appSource = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const featureCss = fs.readFileSync(path.join(root, 'css/features.css'), 'utf8');
+const baseCss = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+const responsiveCss = fs.readFileSync(path.join(root, 'css/responsive.css'), 'utf8');
+
+test('responsive CSS declares phone/tablet breakpoints, wrapping, overflow, and iPhone safe-area rules', () => {
+  assert.match(html, /name="viewport"[^>]*viewport-fit=cover/);
+  for (const width of [1200, 900, 768, 480, 360]) {
+    assert.ok(featureCss.includes('max-width: ' + width + 'px'), 'missing responsive breakpoint ' + width);
+  }
+  assert.match(featureCss, /overflow-wrap: anywhere/);
+  assert.match(featureCss, /max-height: calc\(100dvh - 64px - env\(safe-area-inset-top\)\)/);
+  assert.match(baseCss, /\.table-responsive\s*\{\s*overflow-x:\s*auto/);
+  assert.match(baseCss, /\.hourly-timeline\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(baseCss, /\.forecast-scroll\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(responsiveCss, /@media \(max-width: 768px\)/);
+});
+
+test('fallback data is explicitly labelled as not live and points at OpenWeather endpoints', () => {
+  assert.equal(WEATHER_DATA.meta.live, false);
+  assert.equal(WEATHER_DATA.meta.temperatureUnit, 'F');
+  assert.equal(WEATHER_DATA.meta.snapshotDate, '2026-10-12');
+  assert.equal(WEATHER_DATA.meta.snapshotTime, '21:37');
+  assert.equal(WEATHER_DATA.meta.snapshotTimezone, 'WIB');
+  assert.match(WEATHER_DATA.meta.source, /Fallback lokal/);
+  assert.match(WEATHER_DATA.meta.source, /bukan live/);
+  assert.match(WEATHER_DATA.meta.currentWeatherUrl, /openweathermap\.org\/current/);
+  assert.match(WEATHER_DATA.meta.dailyForecastUrl, /openweathermap\.org\/api\/one-call-4/);
+  assert.match(WEATHER_DATA.meta.airQualityUrl, /openweathermap\.org\/api\/air-pollution/);
+  assert.equal(WEATHER_DATA.provider.name, 'Fallback lokal');
+  assert.equal(WEATHER_DATA.provider.modules.minuteCast.live, false);
+  assert.equal(WEATHER_DATA.provider.modules.radar.live, false);
+});
+
+test('Celsius is the first-visit default while stored Fahrenheit remains a supported preference', () => {
+  assert.match(appSource, /isCelsius: readSavedUnit\(\)/);
+  assert.match(appSource, /function readSavedUnit\(\)[\s\S]*?return window\.localStorage\.getItem\(UNIT_STORAGE_KEY\) !== 'F';[\s\S]*?return true;/);
+  assert.match(html, /id="btn-unit"/);
+  assert.match(html, /id="btn-unit-mobile"/);
+});
+
+test('local fallback keeps the audited 24 C display and does not invent missing UV', () => {
+  assert.equal(WEATHER_DATA.current.temp, 76);
+  assert.equal(WEATHER_DATA.toCelsius(WEATHER_DATA.current.temp), 24);
+  assert.equal(WEATHER_DATA.toCelsius(WEATHER_DATA.current.feelsLike), 27);
+  assert.equal(WEATHER_DATA.current.humidity, 91);
+  assert.equal(WEATHER_DATA.current.wind.speed, 13);
+  assert.equal(WEATHER_DATA.current.visibilityMiles, 6);
+  assert.equal(WEATHER_DATA.current.uvIndex, null, 'unavailable UV must not be invented');
+  assert.equal(WEATHER_DATA.toCelsius(32), 0);
+  assert.equal(WEATHER_DATA.toCelsius(86), 30);
+  assert.equal(WEATHER_DATA.toFahrenheit(0), 32);
+  assert.equal(WEATHER_DATA.toFahrenheit(30), 86);
+  assert.match(html, /id="current-temp">24°C</);
+  assert.match(html, /id="detail-uv">Tidak tersedia</);
+});
+
+test('10-day fallback has ten consecutive dates and unavailable humidity remains null', () => {
+  assert.equal(WEATHER_DATA.dailyForecast.length, 10);
+  WEATHER_DATA.dailyForecast.forEach((day, index) => {
+    const expectedDate = new Date(Date.UTC(2026, 9, 12 + index)).toISOString().slice(0, 10);
+    assert.equal(day.date, expectedDate);
+    const expectedWeekday = new Intl.DateTimeFormat('id-ID', { weekday: 'long', timeZone: 'UTC' }).format(new Date(day.date + 'T00:00:00Z'));
+    assert.equal(day.dayFull, expectedWeekday);
+    assert.ok(day.high >= day.low, day.date + ' high should not be below low');
+    assert.ok(day.rainChance >= 0 && day.rainChance <= 100);
+    assert.equal(day.humidity, null, 'humidity is not available in the fallback summary');
+  });
+  assert.equal(WEATHER_DATA.dailyForecast[0].today, true);
+  assert.equal(WEATHER_DATA.dailyForecast[0].uvIndex, null);
+  assert.match(appSource, /day\.humidity == null \? '—'/, 'null humidity should render as unavailable');
+  assert.match(appSource, /day\.uvIndex == null \? '—'/, 'null UV should render as unavailable');
+});
+
+test('hourly fallback preserves the two remaining current-day hours and 24 following-day hours', () => {
+  const today = WEATHER_DATA.hourlyForecast.today;
+  const tomorrow = WEATHER_DATA.hourlyForecast.tomorrow;
+  assert.equal(today.length, 2);
+  assert.deepEqual(Array.from(today, hour => hour.time), ['22:00', '23:00']);
+  assert.equal(tomorrow.length, 24);
+  tomorrow.forEach((hour, index) => {
+    assert.equal(hour.time, String(index).padStart(2, '0') + ':00');
+  });
+  for (const hour of [...today, ...tomorrow]) {
+    assert.ok(hour.rain >= 0 && hour.rain <= 100);
+    assert.ok(hour.humidity >= 0 && hour.humidity <= 100);
+    assert.ok(hour.temp > 32 && hour.temp < 120, 'fallback temperature should remain in Fahrenheit');
+  }
+  assert.match(html, /id="hourly-subtitle"/);
+});
+
+test('fallback AQI retains its scale, timestamp, and pollutants while UI supports OpenWeather AQI too', () => {
+  const air = WEATHER_DATA.airQuality;
+  assert.equal(air.scale, 'AccuWeather AQI');
+  assert.equal(air.index, 205);
+  assert.equal(air.category, 'Sangat Tidak Sehat');
+  assert.equal(air.updatedAt, '2026-10-12T21:37:00+07:00');
+  assert.equal(air.pollutants.length, 6);
+  assert.deepEqual(Array.from(air.pollutants, pollutant => pollutant.name), ['PM2.5', 'PM10', 'NO₂', 'O₃', 'SO₂', 'CO']);
+  assert.ok(air.pollutants.every(pollutant => pollutant.value > 0 && pollutant.index >= 0 && pollutant.unit === 'µg/m³'));
+  assert.match(appSource, /OpenWeather AQI/);
+  assert.match(appSource, /airQualityIsUnhealthy/);
+  assert.match(appSource, /missingUvPenalty/);
+  assert.match(appSource, /current\.uvIndex >= 8/);
+});
+
+test('monthly data is explicitly local, covers October 2026, and retains its known missing day', () => {
+  assert.equal(WEATHER_DATA.monthlyMonth.year, 2026);
+  assert.equal(WEATHER_DATA.monthlyMonth.month, 10);
+  assert.equal(WEATHER_DATA.monthlyData.length, 31);
+  WEATHER_DATA.monthlyData.forEach((day, index) => {
+    assert.equal(day.date, index + 1);
+    const date = new Date(Date.UTC(2026, 9, day.date));
+    const expectedWeekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone: 'UTC' }).format(date);
+    assert.equal(day.day, expectedWeekday);
+  });
+  const missing = Array.from(WEATHER_DATA.monthlyData).filter(day => day.high === null || day.low === null);
+  assert.equal(missing.length, 1);
+  assert.equal(missing[0].date, 11);
+  assert.match(html, /Data contoh tersedia untuk Oktober 2026 saja/);
+});
+
+test('MinuteCast fallback and radar remain clearly labelled simulations with bounded data', () => {
+  const probabilities = WEATHER_DATA.minuteCast.precipitationProbability;
+  assert.equal(probabilities.length, 24);
+  assert.ok(probabilities.every(value => Number.isInteger(value) && value >= 0 && value <= 100));
+  assert.equal(WEATHER_DATA.radarFrames.length, 7);
+  WEATHER_DATA.radarFrames.forEach(frame => frame.cells.forEach(cell => {
+    assert.ok(cell.x >= 0 && cell.x <= 1);
+    assert.ok(cell.y >= 0 && cell.y <= 1);
+    assert.ok(cell.radius > 0 && cell.radius <= 1);
+    assert.ok(cell.intensity >= 0 && cell.intensity <= 1);
+  }));
+  assert.match(html, /Bukan radar live/);
+  assert.match(html, /1-minute timeline OpenWeather One Call API 4\.0/);
+  assert.match(html, /id="minute-data-badge"/);
+});
+
+test('all requested features have matching tabs, panels, and safe official reference links', () => {
+  const tabs = ['harian', 'radar', 'minute-cast', 'bulanan', 'udara', 'aktivitas'];
+  tabs.forEach(tab => {
+    assert.match(html, new RegExp('data-tab="' + tab + '"'));
+    assert.match(html, new RegExp('id="tab-' + tab + '"'));
+  });
+  for (const slug of ['one-call-4', 'current', 'forecast5', 'air-pollution', 'weathermaps']) {
+    assert.ok(html.includes(slug), 'missing OpenWeather reference: ' + slug);
+  }
+  const externalLinks = html.match(/<a\b[^>]*target="_blank"[^>]*>/g) || [];
+  assert.ok(externalLinks.length > 0);
+  externalLinks.forEach(link => assert.match(link, /rel="noopener noreferrer"/));
+});
+
+test('client loads live data from the same-origin server proxy and falls back with clear labelling', () => {
+  assert.match(appSource, /fetch\('api\/weather'/);
+  assert.match(appSource, /function mergeLivePayload/);
+  assert.match(appSource, /function updateDataNotice/);
+  assert.match(html, /id="data-notice-text"/);
+  assert.match(html, /id="footer-data-note"/);
+  assert.match(html, /id="data-notice-link"/);
+  assert.match(appSource, /Data OpenWeather belum terhubung/);
+  assert.match(appSource, /Terhubung OpenWeather/);
+});
