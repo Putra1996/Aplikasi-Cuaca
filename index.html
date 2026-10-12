@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Aplikasi Cuaca Klumprit, Jawa Tengah, Indonesia — Prakiraan cuaca harian, per jam, dan bulanan. Sumber data: AccuWeather.">
+  <meta name="keywords" content="cuaca, weather, klumprit, jawa tengah, indonesia, prakiraan, accuweather">
+  <meta name="author" content="CuacaKu">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="Cuaca Klumprit — Aplikasi Cuaca">
+  <meta property="og:description" content="Prakiraan cuaca lengkap untuk Klumprit, Jawa Tengah, Indonesia">
+  <meta property="og:type" content="website">
+  <title>Cuaca Klumprit — Aplikasi Cuaca</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛅</text></svg>">
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loader">
+      <div class="loader-sun"></div>
+      <div class="loader-cloud"></div>
+    </div>
+    <p class="loading-text">Memuat data cuaca...</p>
+  </div>
+
+  <div id="app" class="app hidden">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">⛅</span>
+          <span class="logo-text">CuacaKu</span>
+        </div>
+        <nav class="nav-tabs" id="nav-tabs">
+          <button class="nav-tab active" data-tab="beranda">🏠 Beranda</button>
+          <button class="nav-tab" data-tab="harian">📅 Harian</button>
+          <button class="nav-tab" data-tab="per-jam">🕐 Per Jam</button>
+          <button class="nav-tab" data-tab="bulanan">📊 Bulanan</button>
+          <button class="nav-tab" data-tab="tentang">ℹ️ Tentang</button>
+        </nav>
+        <div class="header-actions">
+          <button class="btn-unit" id="btn-unit" title="Ganti satuan">°F / °C</button>
+          <button class="btn-refresh" id="btn-refresh" title="Muat ulang">🔄</button>
+        </div>
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav hidden" id="mobile-nav">
+      <button class="nav-tab active" data-tab="beranda">🏠 Beranda</button>
+      <button class="nav-tab" data-tab="harian">📅 Harian</button>
+      <button class="nav-tab" data-tab="per-jam">🕐 Per Jam</button>
+      <button class="nav-tab" data-tab="bulanan">📊 Bulanan</button>
+      <button class="nav-tab" data-tab="tentang">ℹ️ Tentang</button>
+    </nav>
+
+    <!-- ============ TAB: BERANDA ============ -->
+    <main id="tab-beranda" class="tab-content active">
+      <!-- Hero Current Weather -->
+      <section class="hero" id="hero-section">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+          <div class="location-info">
+            <span class="location-icon">📍</span>
+            <div>
+              <h1 class="location-name" id="location-name">Klumprit, Jawa Tengah</h1>
+              <p class="location-detail" id="location-detail">Indonesia · Minggu, 12 Oktober 2026</p>
+            </div>
+          </div>
+          <div class="current-weather-main">
+            <div class="current-temp-wrap">
+              <img id="current-icon" class="current-icon" src="https://www.accuweather.com/images/weathericons/v2a/05.svg" alt="Cuaca">
+              <div class="current-temp" id="current-temp">86°</div>
+            </div>
+            <div class="current-desc" id="current-desc">Berkabut</div>
+            <div class="current-feels" id="current-feels">Terasa seperti 92°</div>
+          </div>
+          <div class="current-details-grid">
+            <div class="detail-card">
+              <span class="detail-icon">🌡️</span>
+              <span class="detail-label">Tinggi / Rendah</span>
+              <span class="detail-value" id="detail-high-low">89° / 72°</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">💧</span>
+              <span class="detail-label">Kelembapan</span>
+              <span class="detail-value" id="detail-humidity">78%</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">💨</span>
+              <span class="detail-label">Angin</span>
+              <span class="detail-value" id="detail-wind">8 km/h SE</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">🌧️</span>
+              <span class="detail-label">Curah Hujan</span>
+              <span class="detail-value" id="detail-rain">40%</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">👁️</span>
+              <span class="detail-label">Jarak Pandang</span>
+              <span class="detail-value" id="detail-visibility">10 km</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">☀️</span>
+              <span class="detail-label">Indeks UV</span>
+              <span class="detail-value" id="detail-uv">11 Ekstrem</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">🌅</span>
+              <span class="detail-label">Matahari Terbit</span>
+              <span class="detail-value" id="detail-sunrise">05:28</span>
+            </div>
+            <div class="detail-card">
+              <span class="detail-icon">🌇</span>
+              <span class="detail-label">Matahari Terbenam</span>
+              <span class="detail-value" id="detail-sunset">17:42</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5-Day Forecast Quick -->
+      <section class="section">
+        <h2 class="section-title">📅 Prakiraan 5 Hari</h2>
+        <div class="forecast-scroll" id="forecast-5day"></div>
+      </section>
+
+      <!-- Weather Alerts -->
+      <section class="section">
+        <h2 class="section-title">⚠️ Peringatan Cuaca</h2>
+        <div class="alerts-container" id="alerts-container">
+          <div class="alert-card alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <div class="alert-content">
+              <h3>Informasi Cuaca Hari Ini</h3>
+              <p>Suhu tinggi diperkirakan mencapai 89°F dengan kelembapan tinggi. Disarankan untuk tetap terhidrasi dan menggunakan tabir surya saat beraktivitas di luar ruangan.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comfort Index -->
+      <section class="section">
+        <h2 class="section-title">🎯 Indeks Kenyamanan</h2>
+        <div class="comfort-grid" id="comfort-grid">
+          <div class="comfort-card">
+            <div class="comfort-gauge" data-value="75" data-color="#f59e0b">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
+              <span class="comfort-val">75</span>
+            </div>
+            <span class="comfort-label">Aktivitas Luar</span>
+          </div>
+          <div class="comfort-card">
+            <div class="comfort-gauge" data-value="60" data-color="#3b82f6">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
+              <span class="comfort-val">60</span>
+            </div>
+            <span class="comfort-label">Berlari</span>
+          </div>
+          <div class="comfort-card">
+            <div class="comfort-gauge" data-value="85" data-color="#22c55e">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
+              <span class="comfort-val">85</span>
+            </div>
+            <span class="comfort-label">Memancing</span>
+          </div>
+          <div class="comfort-card">
+            <div class="comfort-gauge" data-value="40" data-color="#ef4444">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" class="gauge-bg"/><circle cx="50" cy="50" r="45" class="gauge-fill"/></svg>
+              <span class="comfort-val">40</span>
+            </div>
+            <span class="comfort-label">Bersepeda</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ TAB: HARIAN ============ -->
+    <main id="tab-harian" class="tab-content">
+      <section class="section">
+        <h2 class="section-title">📅 Prakiraan 10 Hari — Oktober 2026</h2>
+        <p class="section-subtitle">Klumprit, Jawa Tengah, Indonesia</p>
+        <div class="daily-forecast-list" id="daily-forecast-list"></div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📈 Grafik Suhu Harian</h2>
+        <div class="chart-container">
+          <canvas id="daily-temp-chart" width="900" height="350"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ TAB: PER JAM ============ -->
+    <main id="tab-per-jam" class="tab-content">
+      <section class="section">
+        <h2 class="section-title">🕐 Prakiraan Per Jam</h2>
+        <p class="section-subtitle">Detail cuaca per jam untuk hari ini</p>
+        <div class="hourly-tabs">
+          <button class="hourly-tab active" data-day="today">Hari Ini</button>
+          <button class="hourly-tab" data-day="tomorrow">Besok</button>
+        </div>
+        <div class="hourly-timeline" id="hourly-timeline"></div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📈 Suhu Per Jam</h2>
+        <div class="chart-container">
+          <canvas id="hourly-temp-chart" width="900" height="300"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ TAB: BULANAN ============ -->
+    <main id="tab-bulanan" class="tab-content">
+      <section class="section">
+        <h2 class="section-title">📊 Cuaca Bulanan — Oktober 2026</h2>
+        <p class="section-subtitle">Ringkasan cuaca sepanjang bulan untuk Klumprit, Jawa Tengah</p>
+        <div class="monthly-summary" id="monthly-summary">
+          <div class="summary-card">
+            <span class="summary-icon">🌡️</span>
+            <span class="summary-label">Suhu Rata-rata</span>
+            <span class="summary-value" id="summary-avg">82°F</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-icon">⬆️</span>
+            <span class="summary-label">Suhu Tertinggi</span>
+            <span class="summary-value" id="summary-max">91°F</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-icon">⬇️</span>
+            <span class="summary-label">Suhu Terendah</span>
+            <span class="summary-value" id="summary-min">69°F</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-icon">🌧️</span>
+            <span class="summary-label">Hari Hujan</span>
+            <span class="summary-value">8 hari</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-icon">☀️</span>
+            <span class="summary-label">Hari Cerah</span>
+            <span class="summary-value">12 hari</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-icon">☁️</span>
+            <span class="summary-label">Hari Berawan</span>
+            <span class="summary-value">11 hari</span>
+          </div>
+        </div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📅 Kalender Cuaca Oktober</h2>
+        <div class="monthly-calendar" id="monthly-calendar"></div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📈 Grafik Suhu Bulanan</h2>
+        <div class="chart-container">
+          <canvas id="monthly-temp-chart" width="900" height="350"></canvas>
+        </div>
+      </section>
+      <section class="section">
+        <h2 class="section-title">📋 Data Harian Oktober</h2>
+        <div class="table-responsive">
+          <table class="data-table" id="monthly-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Hari</th>
+                <th>Kondisi</th>
+                <th>Tinggi</th>
+                <th>Rendah</th>
+                <th>Cuaca</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ TAB: TENTANG ============ -->
+    <main id="tab-tentang" class="tab-content">
+      <section class="section about-section">
+        <div class="about-card">
+          <h2 class="section-title">ℹ️ Tentang Aplikasi Cuaca</h2>
+          <div class="about-content">
+            <div class="about-block">
+              <h3>🌤️ Apa itu CuacaKu?</h3>
+              <p>CuacaKu adalah aplikasi cuaca modern yang menyediakan informasi cuaca lengkap untuk wilayah <strong>Klumprit, Jawa Tengah, Indonesia</strong> dan sekitarnya. Data cuaca bersumber dari AccuWeather.</p>
+            </div>
+            <div class="about-block">
+              <h3>📍 Lokasi</h3>
+              <div class="location-map-info">
+                <div class="map-placeholder">
+                  <span>🗺️</span>
+                  <p>Klumprit, Jawa Tengah, Indonesia</p>
+                  <small>Kode Lokasi: 3454553</small>
+                </div>
+                <div class="nearby-places">
+                  <h4>Tempat Terdekat:</h4>
+                  <ul>
+                    <li>📍 Purwokerto, Jawa Tengah</li>
+                    <li>📍 Purwokerto Selatan, Jawa Tengah</li>
+                    <li>📍 Sokaraja, Jawa Tengah</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="about-block">
+              <h3>📊 Fitur Aplikasi</h3>
+              <div class="features-grid">
+                <div class="feature-item"><span>🌡️</span><p>Cuaca Saat Ini</p></div>
+                <div class="feature-item"><span>📅</span><p>Prakiraan 10 Hari</p></div>
+                <div class="feature-item"><span>🕐</span><p>Prakiraan Per Jam</p></div>
+                <div class="feature-item"><span>📊</span><p>Cuaca Bulanan</p></div>
+                <div class="feature-item"><span>📈</span><p>Grafik Interaktif</p></div>
+                <div class="feature-item"><span>⚠️</span><p>Peringatan Cuaca</p></div>
+                <div class="feature-item"><span>🎯</span><p>Indeks Kenyamanan</p></div>
+                <div class="feature-item"><span>🌙</span><p>Mode Gelap/Terang</p></div>
+              </div>
+            </div>
+            <div class="about-block">
+              <h3>🔗 Sumber Data</h3>
+              <p>Data cuaca bersumber dari <a href="https://www.accuweather.com/id/id/klumprit/3454553/october-weather/3454553" target="_blank" rel="noopener">AccuWeather.com</a></p>
+            </div>
+            <div class="about-block">
+              <h3>⚡ Teknologi</h3>
+              <div class="tech-tags">
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS3</span>
+                <span class="tech-tag">Vanilla JavaScript</span>
+                <span class="tech-tag">Canvas API</span>
+                <span class="tech-tag">Responsive Design</span>
+                <span class="tech-tag">Zero Dependencies</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <p>© 2026 CuacaKu — Aplikasi Cuaca Klumprit</p>
+        <p class="footer-small">Data bersumber dari AccuWeather · Terakhir diperbarui: 12 Oktober 2026</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/charts.js"></script>
+</body>
+</html>
