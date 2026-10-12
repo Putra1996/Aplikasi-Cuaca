@@ -36,6 +36,13 @@ Snapshot dan URL asal dicatat di `js/data.js`; penjelasan keterbatasan ada di ba
 | **Tinggi** | Skor aktivitas menganggap UV hilang sama dengan UV nol dan tidak mencerminkan AQI sangat tidak sehat. | UV hilang diberi penalti konservatif dan diungkapkan. Saran mengutamakan menunda aktivitas luar ruang saat AQI snapshot sangat tidak sehat; skor diberi disclaimer nonmedis. |
 | **Sedang** | Prakiraan hari ini/esok tidak memiliki cakupan jam simetris. | Label tab kini menjelaskan sisa malam 12 Okt dan tanggal 13 Okt; jumlah entri sumber asli dipertahankan. |
 | **Sedang** | Radar sintetis bisa terlihat seperti jejak observasi menit sebelumnya. | Panel diberi badge bukan radar live dan label timeline/bingkai secara eksplisit menyebut simulasi. |
+| **Sedang** | Judul panjang, tabel, header ponsel, dan konten tepi layar berisiko terpotong pada lebar sempit/notch iPhone. | Menu ringkas mulai 1200px, breakpoint hingga 360px, pembungkusan judul/label, scroll lokal untuk tabel/timeline, `viewport-fit=cover`, dan safe-area/dynamic viewport CSS ditambahkan. |
+
+## Status permintaan realtime
+
+Permintaan polling halaman AccuWeather setiap beberapa detik **belum diterapkan**. Halaman web bukan kontrak API stabil; polling HTML rapat rapuh terhadap perubahan markup dan dapat memicu pembatasan. Membuat `setInterval` yang sekadar merender ulang snapshot akan menampilkan data lama seolah-olah baru, jadi itu sengaja tidak dilakukan.
+
+Sinkronisasi yang benar memerlukan [AccuWeather Developer API](https://developer.accuweather.com/documentation/overview), entitlement untuk tiap produk (Core Weather, MinuteCast, AQI/Imagery), key server-side, dan backend/serverless yang menahan key. [Dokumentasi autentikasi](https://developer.accuweather.com/documentation/authentication) mengharuskan API key; MinuteCast dan beberapa data premium punya akses/kuota tersendiri. Belum ada key, subscription entitlement, atau host backend yang disediakan, sehingga aplikasi masih menyatakan dengan jelas bahwa snapshot 12 Okt 2026 bukan realtime.
 
 ## Cakupan fitur
 
@@ -46,12 +53,13 @@ Snapshot dan URL asal dicatat di `js/data.js`; penjelasan keterbatasan ada di ba
 - **Kualitas Udara:** AccuWeather AQI, kategori, timestamp, saran kehati-hatian, serta konsentrasi dan sub-indeks PM2.5/PM10/NO₂/O₃/SO₂/CO.
 - **Kesehatan & Aktivitas:** indikator UV/RealFeel/AQI/hujan dan skor heuristik empat aktivitas dengan penanganan data hilang.
 - **Suhu:** Celsius adalah satuan awal; tombol °C/°F tersedia pada desktop dan seluler dan preferensi disimpan jika storage diizinkan.
+- **Responsif:** menu hamburger pada lebar ≤1200px; grid/heading menyesuaikan hingga 360px; tabel, timeline, dan grafik memiliki area gulir lokal; viewport iPhone memakai safe-area inset.
 
 ## Verifikasi
 
 Pemeriksaan final pada checkout ini lulus:
 
-- `node --test tests/weather-data.test.js` — **9/9 lulus**, termasuk metadata sumber, snapshot suhu 24°C, default Celsius, sepuluh tanggal, jam parsial vs penuh, null handling, AQI/polutan, batasan dataset bulanan, simulasi radar/MinuteCast, tautan, dan tab fitur.
+- `node --test tests/weather-data.test.js` — **10/10 lulus**, termasuk aturan responsive/safe-area, metadata sumber, snapshot suhu 24°C, default Celsius, sepuluh tanggal, jam parsial vs penuh, null handling, AQI/polutan, batasan dataset bulanan, simulasi radar/MinuteCast, tautan, dan tab fitur.
 - `node --check js/data.js`, `js/app.js`, `js/charts.js`, `js/radar.js` — seluruhnya lulus.
 - `git diff --check` — lulus.
 - Parser struktur HTML — **89 ID unik**, 7 aset script/style lokal ada, dan 11 tautan `target="_blank"` memakai `noopener noreferrer`.

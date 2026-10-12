@@ -9,6 +9,22 @@ const source = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const WEATHER_DATA = vm.runInNewContext(source + '\nWEATHER_DATA;', {});
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const featureCss = fs.readFileSync(path.join(root, 'css/features.css'), 'utf8');
+const baseCss = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+const responsiveCss = fs.readFileSync(path.join(root, 'css/responsive.css'), 'utf8');
+
+test('responsive CSS declares phone/tablet breakpoints, wrapping, overflow, and iPhone safe-area rules', () => {
+  assert.match(html, /name="viewport"[^>]*viewport-fit=cover/);
+  for (const width of [1200, 900, 768, 480, 360]) {
+    assert.ok(featureCss.includes('max-width: ' + width + 'px'), 'missing responsive breakpoint ' + width);
+  }
+  assert.match(featureCss, /overflow-wrap: anywhere/);
+  assert.match(featureCss, /max-height: calc\(100dvh - 64px - env\(safe-area-inset-top\)\)/);
+  assert.match(baseCss, /\.table-responsive\s*\{\s*overflow-x:\s*auto/);
+  assert.match(baseCss, /\.hourly-timeline\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(baseCss, /\.forecast-scroll\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(responsiveCss, /@media \(max-width: 768px\)/);
+});
 
 test('weather and AQI source data carries explicit snapshot provenance and is not marked live', () => {
   assert.equal(WEATHER_DATA.meta.live, false);

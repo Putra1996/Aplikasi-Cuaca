@@ -362,7 +362,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .about-source a { display: inline-block; margin: 0 2px 4px; }
 .footer-small { max-width: 760px; margin-right: auto; margin-left: auto; }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
   .nav-tabs { display: none; }
   .hamburger { display: flex; }
   .header-inner { justify-content: space-between; }
@@ -381,8 +381,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   .mobile-tools .btn-refresh { flex: 1; font-size: .82rem; }
   .mobile-tools .btn-unit { min-height: 38px; }
   .quick-feature-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .section-heading-row { align-items: flex-start; }
-  .section-heading-row > .segmented-control { flex: 0 0 auto; }
+  .section-heading-row { align-items: flex-start; flex-wrap: wrap; }
+  .section-heading-row > div { min-width: 0; flex: 1 1 220px; }
+  .section-heading-row > .text-link-button { min-width: 0; max-width: 100%; white-space: normal; }
+  .section-heading-row > .segmented-control { flex: 0 1 auto; max-width: 100%; }
   .daily-summary { grid-template-columns: minmax(0,1fr) 38px auto auto 20px; grid-template-areas: "date icon high low expand" "condition condition condition condition expand" "bar bar bar bar bar"; gap: 6px 9px; min-height: 86px; padding: 12px; }
   .daily-date-col { grid-area: date; }
   .daily-icon { grid-area: icon; width: 34px; height: 34px; font-size: 1.65rem; }
@@ -422,8 +424,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 }
 @media (max-width: 480px) {
   .section-heading-row { gap: 9px; }
-  .section-heading-row .data-badge { font-size: .62rem; padding: 5px 7px; }
-  .section-heading-row > .text-link-button { font-size: .72rem; }
+  .section-heading-row .data-badge { max-width: 100%; font-size: .62rem; padding: 5px 7px; white-space: normal; text-align: center; }
+  .section-heading-row > .text-link-button { flex: 1 1 100%; margin-left: 0; font-size: .72rem; text-align: left; }
   .quick-feature { min-height: 120px; padding: 13px; }
   .minute-summary-card { flex-direction: column; gap: 14px; padding: 17px; }
   .minute-current { display: flex; align-items: baseline; justify-content: space-between; width: 100%; min-width: 0; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--feature-border); text-align: left; }
@@ -453,6 +455,50 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   .daily-summary { grid-template-columns: minmax(0,1fr) 30px auto auto 16px; gap: 5px; padding: 10px; }
   .data-table th, .data-table td { padding: 9px 10px; }
 }
+/* Keep flexible cards and long labels inside narrow phone/tablet viewports. */
+.app, .section, .hero-content, .section-heading-row > div,
+.current-details-grid > *, .quick-feature-grid > *, .monthly-summary > *,
+.health-risk-grid > *, .activity-grid > *, .pollutant-card,
+.location-info > div, .daily-summary { min-width: 0; }
+.location-detail, .detail-label, .detail-value, .section-title,
+.section-subtitle, .feature-callout, .data-notice p { overflow-wrap: anywhere; }
+.table-responsive { width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.hourly-timeline, .forecast-scroll, .chart-container { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 360px) {
+  .header-inner { padding-inline: 12px; }
+  .hero { padding: 26px 12px 22px; }
+  .section { padding-inline: 12px; }
+  .data-notice { padding-inline: 12px; font-size: .68rem; }
+  .data-notice a { white-space: normal; }
+  .section-heading-row { gap: 7px; }
+  .section-title { font-size: 1rem; }
+  .current-details-grid { gap: 5px; }
+  .detail-card { padding: 9px 6px; }
+  .detail-value { font-size: .72rem; }
+  .daily-summary { grid-template-columns: minmax(0,1fr) 27px auto auto 14px; gap: 4px; padding: 8px; }
+  .daily-summary .daily-high, .daily-summary .daily-low { font-size: .74rem; }
+  .pollutant-card { padding: 12px; }
+  .air-scale span { font-size: .55rem; }
+  .hourly-tab { padding: 8px 11px; font-size: .76rem; }
+  .radar-map-toolbar { gap: 6px; padding-inline: 8px; }
+  .radar-sim-label { gap: 6px; font-size: .72rem; }
+  .minute-chart { grid-template-columns: repeat(24,minmax(4px,1fr)); gap: 1px; }
+  .minute-bar-label { font-size: .38rem; }
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+  .header { padding-top: env(safe-area-inset-top); }
+  .header-inner { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .mobile-nav {
+    top: calc(64px + env(safe-area-inset-top));
+    max-height: calc(100vh - 64px - env(safe-area-inset-top));
+    max-height: calc(100dvh - 64px - env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

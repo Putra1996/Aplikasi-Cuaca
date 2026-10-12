@@ -27,6 +27,12 @@ Kondisi saat ini, prakiraan 10 hari, jam yang tersedia, dan AQI dicocokkan manua
 
 Tautan sumber resmi ditampilkan di dalam aplikasi dan dicatat pada `js/data.js`. Cuaca saat ini: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/current-weather/3454553) · 10 hari: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/10-day-weather-forecast/3454553) · kualitas udara: [AccuWeather](https://www.accuweather.com/id/id/klumprit/3454553/air-quality-index/3454553).
 
+### Sinkronisasi realtime
+
+Belum ada koneksi realtime di repository ini. Memeriksa halaman web AccuWeather tiap beberapa detik bukan metode sinkronisasi yang andal: HTML bukan kontrak API, browser tidak mendapat akses CORS yang dijamin, markup dapat berubah, dan polling agresif dapat dibatasi. Sebagai ilustrasi, polling satu endpoint setiap 5 detik berarti **17.280 permintaan per hari** sebelum menghitung fitur lain.
+
+Integrasi live harus memakai [AccuWeather Developer API](https://developer.accuweather.com/documentation/overview), menyimpan key sebagai secret backend (bukan di JavaScript publik), dan mengikuti kuota serta entitlement produk. MinuteCast memiliki produk API tersendiri; rincian AQI/polutan juga bergantung pada endpoint/aksesnya. API key atau subscription belum disediakan untuk proyek ini, jadi UI secara eksplisit tidak mengklaim data live.
+
 ## Menjalankan lokal
 
 Dari root repository:
