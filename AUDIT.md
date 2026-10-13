@@ -1,5 +1,39 @@
 # AUDIT — CuacaKu (Klumprit, Jawa Tengah)
 
+## 🔴 Audit insiden 13 Oktober 2026 — Vercel `500 FUNCTION_INVOCATION_FAILED`
+
+**Gejala.** `aplikasicuaca-omega.vercel.app` mengembalikan `500: INTERNAL_SERVER_ERROR · FUNCTION_INVOCATION_FAILED` (region `sin1`) untuk **semua** halaman, termasuk halaman utama.
+
+**Akar masalah (dikonfirmasi dari source code resmi `vercel/vercel`).**
+
+1. Detektor framework Vercel memiliki preset `Node` (`slug: 'node'`) yang ter-trigger oleh **keberadaan file `server.js` di root repo** — tanpa syarat konten apa pun (`packages/frameworks/src/frameworks.ts`). Repo ini punya `server.js` (proxy OpenWeather), sehingga Vercel mengkategorikannya sebagai aplikasi Node utuh.
+2. Preset itu memakai builder `@vercel/backends`: **seluruh situs** (termasuk file statis) dibungkus menjadi **satu fungsi serverless** dari entrypoint `server.js`, dan runtime `@vercel/node` untuk folder `api/` justru **dinonaktifkan** (`ignoreRuntimes: ['@vercel/node']`).
+3. `server.js` lama hanya memanggil `server.listen(...)` di dalam guard `if (require.main === module)`. Saat di-bundle/di-import oleh builder (bukan dieksekusi langsung), guard itu **false** → tidak ada HTTP listener/handler yang terdaftar → setiap invokasi fungsi gagal → `FUNCTION_INVOCATION_FAILED` di semua rute.
+4. Masalah sekunder (akan muncul setelah #3 diperbaiki pun): penyajian file statis via `fs` dengan path dinamis tidak ikut ter-trace ke dalam bundle fungsi, dan `OPENWEATHER_API_KEY` belum tentu diset di Environment Variables Vercel.
+
+**Perbaikan (restrukturisasi ke pola idiomatik Vercel: statis + fungsi `api/`).**
+
+| Perubahan | Alasan |
+| --- | --- |
+| `server.js` (root) **dihapus**, logika OpenWeather dipindah ke `lib/openweather.js` | Menghilangkan trigger deteksi framework "Node"; logika tetap satu sumber |
+| `api/weather.js` + `api/health.js` (baru) | Fungsi serverless Vercel zero-config untuk `/api/weather` dan `/api/health` |
+| `scripts/dev-server.js` (baru) | Pengganti `node server.js` untuk lokal/Railway/Render/VPS — statis + proxy yang sama |
+| `vercel.json` dengan `"framework": null` | Memaksa preset **Other**, meng-override setelan proyek yang mungkin sudah terlanjur terkunci ke "Node" di dashboard |
+| `vercel.json` → `functions["api/*.js"].maxDuration: 30` | Rantai fallback One Call → endpoint dasar bisa >10 detik pada kondisi timeout |
+| `.vercelignore` | Tidak mengunggah `tests/`, `scripts/`, dokumen; **`lib/` sengaja tidak di-ignore** (dibutuhkan fungsi `api/`) |
+| Tes regresi baru (`tests/openweather-server.test.js`) | Gagal bila `server.js`/`server.ts` muncul lagi di root, `framework` bukan `null`, atau `lib/` di-ignore |
+| Tes fungsi Vercel baru (`tests/vercel-functions.test.js` + harness) | Menguji `api/*.js` persis sebagai handler `(req, res)` dengan mock OpenWeather: payload live, 503 bersih tanpa key, key tidak bocor |
+
+**Langkah pasca-deploy yang wajib dilakukan pemilik proyek di Vercel:**
+
+1. Set `OPENWEATHER_API_KEY` di **Project Settings → Environment Variables** (Production), lalu redeploy.
+2. Verifikasi `/api/health` → `configured: true` dan `/api/weather` → `meta.live: true`.
+3. Tanpa key, situs tetap tayang (tidak lagi 500) dengan fallback lokal berlabel jelas + banner status.
+
+**Verifikasi:** `node --test tests/*.test.js` — **26/26 lulus** (termasuk 2 tes fungsi Vercel dan 1 tes regresi layout); `node --check` lulus untuk semua file server & client.
+
+---
+
 Tanggal audit: 12 Oktober 2026 · Branch `arena/94271b44-aplikasi-cuaca`
 
 ## Ringkasan status
@@ -55,6 +89,6 @@ Catatan interval: model One Call 4.0 diperbarui setiap 10 menit; polling tiap be
 
 ## Prasyarat publikasi
 
-- Host Node.js (Railway/Render/Fly.io/VPS) dengan `OPENWEATHER_API_KEY` sebagai secret dan perintah `node server.js`.
+- **Vercel** (zero-config, lihat audit 13 Okt di atas) dengan `OPENWEATHER_API_KEY` sebagai Environment Variable; atau host Node.js (Railway/Render/Fly.io/VPS) dengan perintah `node scripts/dev-server.js`. *(Catatan: referensi `server.js` pada audit 12 Okt di bawah mengacu pada struktur lama — kini `lib/openweather.js` + `scripts/dev-server.js`.)*
 - Subscribe "One Call by Call" di akun OpenWeather (1.000 call/hari gratis) untuk minute forecast, UV, dan prakiraan 10 hari; endpoint dasar tetap jalan tanpa subscribe.
 - Setelah deploy, verifikasi `/api/health` (`configured: true`) dan `/api/weather` (`meta.live: true`) sebelum mengumumkan fitur live.
