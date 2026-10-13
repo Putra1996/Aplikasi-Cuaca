@@ -1,0 +1,8 @@
+# File yang tidak perlu diunggah ke deployment Vercel.
+# PENTING: lib/ TIDAK boleh di-ignore — dibutuhkan oleh fungsi api/*.js.
+tests
+scripts
+AUDIT.md
+README.md
+.env.example
+.nojekyll

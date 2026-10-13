@@ -7,7 +7,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const serverSource = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const libSource = fs.readFileSync(path.join(root, 'lib/openweather.js'), 'utf8');
+const weatherFnSource = fs.readFileSync(path.join(root, 'api/weather.js'), 'utf8');
+const healthFnSource = fs.readFileSync(path.join(root, 'api/health.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const {
@@ -16,20 +18,38 @@ const {
   normalizeDailyRecords,
   normalizeBasicDailyRecords,
   normalizeHourlyRecords,
-  normalizeMinuteCast,
-  createServer
-} = require(path.join(root, 'server.js'));
+  normalizeMinuteCast
+} = require(path.join(root, 'lib/openweather.js'));
+const { createServer } = require(path.join(root, 'scripts/dev-server.js'));
 
 test('server keeps the OpenWeather key out of client-side code and public responses', () => {
-  assert.match(serverSource, /OPENWEATHER_API_KEY/);
+  assert.match(libSource, /OPENWEATHER_API_KEY/);
   assert.doesNotMatch(appSource, /appid=/);
   assert.doesNotMatch(html, /appid=/);
   // No 32-hex API-key-shaped strings may appear in browser-facing files.
   assert.doesNotMatch(appSource, /\b[0-9a-f]{32}\b/);
   assert.doesNotMatch(html, /\b[0-9a-f]{32}\b/);
-  assert.match(serverSource, /Do not log\/return the request URL or provider body/);
+  assert.doesNotMatch(weatherFnSource, /\b[0-9a-f]{32}\b/);
+  assert.doesNotMatch(healthFnSource, /\b[0-9a-f]{32}\b/);
+  assert.match(libSource, /Do not log\/return the request URL or provider body/);
   assert.ok(fs.existsSync(path.join(root, '.gitignore')));
   assert.match(fs.readFileSync(path.join(root, '.gitignore'), 'utf8'), /\.env/);
+});
+
+test('Vercel zero-config layout stays intact (regression guard for FUNCTION_INVOCATION_FAILED)', () => {
+  // Sebuah file server.js/server.ts di root membuat Vercel mendeteksi framework "Node"
+  // dan membungkus SELURUH situs sebagai satu function via @vercel/backends — penyebab
+  // insiden 500 FUNCTION_INVOCATION_FAILED. Jaga agar file itu tidak muncul kembali.
+  for (const forbidden of ['server.js', 'server.mjs', 'server.ts', 'src/server.js', 'src/server.ts']) {
+    assert.ok(!fs.existsSync(path.join(root, forbidden)), forbidden + ' must not exist at the project root');
+  }
+  assert.ok(fs.existsSync(path.join(root, 'api/weather.js')));
+  assert.ok(fs.existsSync(path.join(root, 'api/health.js')));
+  const vercelConfig = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  assert.equal(vercelConfig.framework, null, 'framework must be pinned to null ("Other") in vercel.json');
+  // .vercelignore must never exclude lib/ (needed by the api functions).
+  const vercelIgnore = fs.readFileSync(path.join(root, '.vercelignore'), 'utf8');
+  assert.ok(!/^lib\b/m.test(vercelIgnore), '.vercelignore must not exclude lib/');
 });
 
 test('OpenWeather AQI mapping uses the documented 1-5 scale', () => {

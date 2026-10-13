@@ -60,7 +60,7 @@ function startMockOpenWeather() {
 
 function spawnCuacaKu(port) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['server.js'], {
+    const child = spawn(process.execPath, ['scripts/dev-server.js'], {
       cwd: root,
       env: {
         ...process.env,
