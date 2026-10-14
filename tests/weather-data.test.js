@@ -167,6 +167,9 @@ test('client loads live data from the same-origin server proxy and falls back wi
   assert.match(html, /id="data-notice-text"/);
   assert.match(html, /id="footer-data-note"/);
   assert.match(html, /id="data-notice-link"/);
-  assert.match(appSource, /Data OpenWeather belum terhubung/);
+  // Audit 14 Okt 2026: banner memakai tiga status jujur — live OpenWeather, live Open-Meteo (cadangan), atau fallback lokal.
   assert.match(appSource, /Terhubung OpenWeather/);
+  assert.match(appSource, /Live via /);
+  assert.match(appSource, /Penyedia live belum terhubung/);
+  assert.match(appSource, /dataSourceName\(\)/);
 });

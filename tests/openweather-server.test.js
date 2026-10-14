@@ -7,6 +7,13 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
+
+// Uji deterministik: penyedia cadangan diarahkan ke port tertutup SEBELUM modul dimuat,
+// sehingga hasilnya tidak bergantung pada jaringan sandbox/CI (audit 14 Okt 2026).
+process.env.OPEN_METEO_WEATHER_BASE = process.env.OPEN_METEO_WEATHER_BASE || 'http://127.0.0.1:1';
+process.env.OPEN_METEO_AQI_BASE = process.env.OPEN_METEO_AQI_BASE || 'http://127.0.0.1:1';
+process.env.BMKG_API_BASE = process.env.BMKG_API_BASE || 'http://127.0.0.1:1';
+
 const libSource = fs.readFileSync(path.join(root, 'lib/openweather.js'), 'utf8');
 const weatherFnSource = fs.readFileSync(path.join(root, 'api/weather.js'), 'utf8');
 const healthFnSource = fs.readFileSync(path.join(root, 'api/health.js'), 'utf8');
@@ -155,19 +162,23 @@ test('GET /api/health reports configuration without leaking the key', async (t) 
   assert.doesNotMatch(JSON.stringify(body), /\b[0-9a-f]{32}\b/);
 });
 
-test('GET /api/weather without a configured key returns a clean 503 provider error', async (t) => {
+test('GET /api/weather explains the full provider chain when nothing can be reached', async (t) => {
   const server = createServer();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const port = server.address().port;
   const response = await fetch('http://127.0.0.1:' + port + '/api/weather');
   const body = await response.json();
-  assert.ok(response.status === 503 || response.status === 200);
-  if (response.status === 503) {
-    assert.equal(body.error.code, 'OPENWEATHER_API_KEY_NOT_CONFIGURED');
-    assert.ok(!JSON.stringify(body).includes('appid'));
-    assert.doesNotMatch(JSON.stringify(body), /\b[0-9a-f]{32}\b/);
-  }
+
+  // Tanpa key dan tanpa Open-Meteo yang dapat dijangkau: error harus jelas, bukan payload karangan.
+  assert.equal(response.status, 502);
+  assert.equal(body.error.code, 'WEATHER_PROVIDERS_UNAVAILABLE');
+  assert.deepEqual(body.providerChain, ['OpenWeather', 'Open-Meteo']);
+  const codes = body.attempts.map(attempt => attempt.code);
+  assert.ok(codes.includes('OPENWEATHER_API_KEY_NOT_CONFIGURED'));
+  assert.ok(codes.includes('OPEN_METEO_UNAVAILABLE'));
+  assert.ok(!JSON.stringify(body).includes('appid'));
+  assert.doesNotMatch(JSON.stringify(body), /\b[0-9a-f]{32}\b/);
 });
 
 test('static server only exposes public project files', async (t) => {

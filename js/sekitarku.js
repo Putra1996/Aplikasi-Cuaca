@@ -1160,22 +1160,46 @@
     var isDefaultKlumprit = Math.abs(Number(bundle.location.lat) - (-7.42)) < 0.02 && Math.abs(Number(bundle.location.lon) - 109.24) < 0.02;
     var openWeatherIsLive = window.WEATHER_DATA && window.WEATHER_DATA.meta && window.WEATHER_DATA.meta.live && window.WEATHER_DATA.provider && window.WEATHER_DATA.provider.name === 'OpenWeather';
 
-    if (bundle.cuacakuCompat && (!openWeatherIsLive || !isDefaultKlumprit)) {
+    // Audit 14 Okt 2026: hanya data Open-Meteo yang benar-benar live boleh menggantikan payload utama.
+    // Data contoh (weather.live === false) tidak pernah lagi dipromosikan menjadi "live".
+    var compatIsLive = Boolean(bundle.cuacakuCompat && bundle.cuacakuCompat.live === true);
+    if (bundle.cuacakuCompat && compatIsLive && (!openWeatherIsLive || !isDefaultKlumprit)) {
       var compat = bundle.cuacakuCompat;
       window.WEATHER_DATA.location = compat.location;
       window.WEATHER_DATA.current = compat.current;
       window.WEATHER_DATA.dailyForecast = compat.dailyForecast;
       window.WEATHER_DATA.hourlyForecast = compat.hourlyForecast;
       window.WEATHER_DATA.airQuality = compat.airQuality;
-      if (bundle.meta && bundle.meta.live) {
-        window.WEATHER_DATA.meta.live = true;
-        window.WEATHER_DATA.meta.source = 'BMKG & Open-Meteo API';
-        window.WEATHER_DATA.meta.snapshotLabel = new Intl.DateTimeFormat('id-ID', {
-          day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Jakarta'
-        }).format(new Date()) + ' WIB';
+      var previousModules = (window.WEATHER_DATA.provider && window.WEATHER_DATA.provider.modules) || {};
+      window.WEATHER_DATA.provider = {
+        name: 'Open-Meteo',
+        refreshIntervalSeconds: (window.WEATHER_DATA.provider && window.WEATHER_DATA.provider.refreshIntervalSeconds) || 600,
+        modules: {
+          current: { live: true, product: 'Open-Meteo Forecast API' },
+          dailyForecast: { live: Boolean(compat.dailyForecast && compat.dailyForecast.length), days: compat.dailyForecast ? compat.dailyForecast.length : 0, product: 'Open-Meteo Forecast API · hingga 7 hari' },
+          hourlyForecast: { live: Boolean(compat.hourlyForecast && compat.hourlyForecast.today && compat.hourlyForecast.today.length), intervalMinutes: 60, product: 'Open-Meteo Forecast API · per jam' },
+          minuteCast: { live: false, product: 'Open-Meteo tidak menyediakan timeline per menit' },
+          airQuality: compat.aqiLive === true
+            ? { live: true, product: 'Open-Meteo / Copernicus Atmosphere · US-EPA AQI', error: null }
+            : { live: false, product: 'Open-Meteo / Copernicus Atmosphere · tidak tersedia', error: 'OPEN_METEO_AQI_UNAVAILABLE' },
+          monthly: { live: false, product: previousModules.monthly && previousModules.monthly.product || 'Timeline per bulan memerlukan One Call API 4.0' },
+          radar: { live: false, product: 'Radar peta tetap simulasi (produk peta terpisah)' }
+        }
+      };
+      window.WEATHER_DATA.meta.live = true;
+      window.WEATHER_DATA.meta.source = 'Open-Meteo';
+      window.WEATHER_DATA.meta.providerName = 'Open-Meteo';
+      if (!openWeatherIsLive) {
+        window.WEATHER_DATA.meta.fallback = { from: 'OpenWeather', provider: 'Open-Meteo', note: 'OpenWeather tidak aktif; Sekitarku mengisi kartu cuaca dari Open-Meteo (live).' };
       }
+      window.WEATHER_DATA.meta.snapshotLabel = new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Jakarta'
+      }).format(new Date()) + ' WIB';
       if (window.WEATHER_UI && typeof window.WEATHER_UI.renderAll === 'function') {
         window.WEATHER_UI.renderAll();
+      }
+      if (window.WEATHER_UI && typeof window.WEATHER_UI.updateDataNotice === 'function') {
+        window.WEATHER_UI.updateDataNotice();
       }
     }
   }

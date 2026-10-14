@@ -13,7 +13,8 @@
     hourlyDay: 'today',
     minuteWindow: 30,
     monthChartMode: 'temperature',
-    monthKey: MONTH_KEY
+    monthKey: MONTH_KEY,
+    lastError: null
   };
   window._currentMonthlyChartMode = state.monthChartMode;
 
@@ -136,18 +137,21 @@
       };
       return categories[Math.max(1, Math.min(5, Math.round(value)))];
     }
-    if (value <= 19) return { label: 'Bagus Sekali', color: '#22c55e', summary: 'Kualitas udara bagus sekali', advice: 'Kualitas udara ideal bagi sebagian besar orang; tetap perhatikan kondisi diri.' };
-    if (value <= 49) return { label: 'Lumayan', color: '#84cc16', summary: 'Kualitas udara lumayan', advice: 'Umumnya dapat diterima; kelompok sensitif dapat mengalami gejala ringan jika terpapar lama.' };
-    if (value <= 99) return { label: 'Buruk', color: '#f59e0b', summary: 'Kualitas udara buruk', advice: 'Kelompok sensitif sebaiknya mengurangi waktu di luar bila mengalami gejala.' };
-    if (value <= 149) return { label: 'Tidak Sehat', color: '#f97316', summary: 'Kualitas udara tidak sehat', advice: 'Batasi aktivitas luar ruang, terutama bagi kelompok sensitif.' };
-    if (value <= 249) return { label: 'Sangat Tidak Sehat', color: '#ef4444', summary: 'Kualitas udara sangat tidak sehat', advice: WEATHER_DATA.airQuality.advice };
-    return { label: 'Berbahaya', color: '#a855f7', summary: 'Kualitas udara berbahaya', advice: 'Hindari kegiatan luar ruang dan ikuti arahan otoritas setempat.' };
+    // Audit 14 Okt 2026: ambang & label diselaraskan dengan kartu Sekitarku (getUsAqiInfo)
+    // supaya satu angka US-EPA tidak pernah tampil dengan dua kategori berbeda di halaman yang sama.
+    if (value <= 50) return { label: 'Baik', color: '#10b981', summary: 'Kualitas udara baik', advice: 'Kualitas udara ideal; aktivitas luar ruang aman untuk semua kelompok.' };
+    if (value <= 100) return { label: 'Sedang', color: '#eab308', summary: 'Kualitas udara sedang', advice: 'Umumnya dapat diterima; kelompok sangat sensitif perlu berhati-hati bila terpapar lama.' };
+    if (value <= 150) return { label: 'Tidak Sehat (Sensitif)', color: '#f97316', summary: 'Kualitas udara tidak sehat bagi kelompok sensitif', advice: 'Anak, lansia, dan penderita asma sebaiknya mengurangi aktivitas fisik di luar ruang.' };
+    if (value <= 200) return { label: 'Tidak Sehat', color: '#ef4444', summary: 'Kualitas udara tidak sehat', advice: 'Semua kelompok berisiko; gunakan masker dan batasi aktivitas luar ruang.' };
+    if (value <= 300) return { label: 'Sangat Tidak Sehat', color: '#a855f7', summary: 'Kualitas udara sangat tidak sehat', advice: WEATHER_DATA.airQuality.advice };
+    return { label: 'Berbahaya', color: '#881337', summary: 'Kualitas udara berbahaya', advice: 'Hindari kegiatan luar ruang dan ikuti arahan otoritas setempat.' };
   }
 
   function airQualityIsUnhealthy() {
     var value = Number(WEATHER_DATA.airQuality.index);
     if (!Number.isFinite(value)) return false;
-    return WEATHER_DATA.airQuality.scale === 'OpenWeather AQI' ? value >= 4 : value >= 150;
+    // OpenWeather AQI 1–5: 4–5 = buruk/sangat buruk. US-EPA: mulai 101 (tidak sehat bagi kelompok sensitif).
+    return WEATHER_DATA.airQuality.scale === 'OpenWeather AQI' ? value >= 4 : value >= 101;
   }
 
   function scoreLabel(score) {
@@ -197,12 +201,39 @@
     });
   }
 
+  // Label sumber data yang jujur (audit 14 Okt 2026): UI tidak boleh menyebut "OpenWeather"
+  // ketika payload live sebenarnya datang dari penyedia cadangan (Open-Meteo).
+  function dataSourceName() {
+    if (!WEATHER_DATA.meta.live) return 'fallback lokal';
+    var meta = WEATHER_DATA.meta || {};
+    var name = (WEATHER_DATA.provider && WEATHER_DATA.provider.name) || meta.providerName || meta.source || '';
+    if (/open-meteo/i.test(String(name))) return 'Open-Meteo';
+    if (/bmkg/i.test(String(name))) return 'BMKG & Open-Meteo';
+    if (/openweather/i.test(String(name))) return 'OpenWeather';
+    return String(name || 'Live');
+  }
+
+  function aqiSourceName() {
+    if (!WEATHER_DATA.meta.live) return 'Snapshot fallback';
+    var scale = (WEATHER_DATA.airQuality && WEATHER_DATA.airQuality.scale) || '';
+    if (scale === 'OpenWeather AQI') return 'OpenWeather AQI';
+    if (/open-meteo/i.test(scale)) return 'Open-Meteo / Copernicus AQI';
+    return scale || 'AQI live';
+  }
+
+  function describeProviderFailure() {
+    var error = state.lastError;
+    if (!error) return '';
+    var code = error.code ? ' (' + String(error.code) + ')' : '';
+    return error.message ? String(error.message) + code : code.trim();
+  }
+
   function updateCurrentWeather() {
     var current = WEATHER_DATA.current;
     var locationName = $('#location-name');
     if (locationName) locationName.textContent = WEATHER_DATA.location.name + ', ' + WEATHER_DATA.location.region;
     var locationDetail = $('#location-detail');
-    if (locationDetail) locationDetail.textContent = WEATHER_DATA.location.country + ' · ' + formatWeekday(currentDateString()) + ', ' + formatDate(currentDateString()) + ' · ' + (WEATHER_DATA.meta.live ? 'OpenWeather ' + current.observedAt : 'snapshot lokal ' + current.observedAt);
+    if (locationDetail) locationDetail.textContent = WEATHER_DATA.location.country + ' · ' + formatWeekday(currentDateString()) + ', ' + formatDate(currentDateString()) + ' · ' + (WEATHER_DATA.meta.live ? dataSourceName() + ' ' + current.observedAt : 'snapshot lokal ' + current.observedAt);
 
     var currentIcon = $('#current-icon');
     if (currentIcon) {
@@ -242,7 +273,7 @@
     var aqiInfo = getAqiInfo(aqi.index);
     var alerts = [];
     if (airQualityIsUnhealthy()) {
-      alerts.push({ icon: '🌫️', className: 'alert-danger', title: 'Kualitas udara ' + aqiInfo.label.toLowerCase(), text: (WEATHER_DATA.meta.live ? 'OpenWeather AQI ' : 'Snapshot lokal AQI ') + aqi.index + ' (' + aqiInfo.label + '). ' + aqiInfo.advice });
+      alerts.push({ icon: '🌫️', className: 'alert-danger', title: 'Kualitas udara ' + aqiInfo.label.toLowerCase(), text: aqiSourceName() + ' ' + aqi.index + ' (' + aqiInfo.label + '). ' + aqiInfo.advice });
     }
     if (Number.isFinite(current.uvIndex) && current.uvIndex >= 8) {
       alerts.push({ icon: '☀️', className: 'alert-warning', title: 'Indeks UV sangat tinggi', text: 'Indeks UV mencapai ' + current.uvIndex + ' (' + String(current.uvDesc || '').toLowerCase() + '). Cari tempat teduh dan gunakan pelindung matahari.' });
@@ -251,7 +282,7 @@
       alerts.push({ icon: '🌧️', className: 'alert-info', title: 'Ada peluang hujan', text: 'Peluang hujan ' + (current.rainWindow || 'pada interval berikutnya') + ' adalah ' + current.rainChance + '%. Periksa prakiraan terbaru sebelum bepergian.' });
     }
     if (!alerts.length) {
-      alerts.push({ icon: 'ℹ️', className: 'alert-info', title: 'Tidak ada catatan khusus', text: WEATHER_DATA.meta.live ? 'Ringkasan dihitung dari data OpenWeather yang terakhir diterima ' + WEATHER_DATA.meta.snapshotLabel + '.' : 'Data OpenWeather belum terhubung; nilai yang tampil adalah fallback lokal dan bukan kondisi terkini.' });
+      alerts.push({ icon: 'ℹ️', className: 'alert-info', title: 'Tidak ada catatan khusus', text: WEATHER_DATA.meta.live ? 'Ringkasan dihitung dari data live ' + dataSourceName() + ' yang terakhir diterima ' + WEATHER_DATA.meta.snapshotLabel + '.' : 'Penyedia live belum terhubung; nilai yang tampil adalah fallback lokal dan bukan kondisi terkini.' });
     }
     container.innerHTML = alerts.map(function (alert) {
       return '<article class="alert-card ' + alert.className + '"><span class="alert-icon" aria-hidden="true">' + alert.icon + '</span><div class="alert-content"><h3>' + escapeHTML(alert.title) + '</h3><p>' + escapeHTML(alert.text) + '</p></div></article>';
@@ -316,7 +347,7 @@
     if (period && data.length) {
       var dayCount = data.length;
       var dailySource = WEATHER_DATA.provider && WEATHER_DATA.provider.modules && WEATHER_DATA.provider.modules.dailyForecast;
-      var sourceLabel = WEATHER_DATA.meta.live ? (dailySource && dailySource.days >= 10 ? 'OpenWeather · hingga 10 hari' : (WEATHER_DATA.meta.source || 'Live') + ' · ' + dayCount + ' hari tersedia') : 'fallback lokal · bukan live';
+      var sourceLabel = WEATHER_DATA.meta.live ? (dailySource && dailySource.days >= 10 ? dataSourceName() + ' · hingga 10 hari' : (WEATHER_DATA.meta.source || 'Live') + ' · ' + dayCount + ' hari tersedia') : 'fallback lokal · bukan live';
       var locTitle = (WEATHER_DATA.location && WEATHER_DATA.location.name ? WEATHER_DATA.location.name + ', ' + (WEATHER_DATA.location.region || 'Indonesia') : 'Klumprit, Jawa Tengah');
       period.textContent = locTitle + ' · ' + formatDate(data[0].date, { day: 'numeric', month: 'short' }) + '–' + formatDate(data[data.length - 1].date, { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + sourceLabel;
     }
@@ -349,7 +380,7 @@
     var hourlySubtitle = $('#hourly-subtitle');
     if (hourlySubtitle) {
       var step = WEATHER_DATA.provider && WEATHER_DATA.provider.modules && WEATHER_DATA.provider.modules.hourlyForecast && WEATHER_DATA.provider.modules.hourlyForecast.intervalMinutes;
-      hourlySubtitle.textContent = 'Prakiraan per jam OpenWeather' + (step === 180 ? ' (interval 3 jam, 5 hari ke depan)' : step === 60 ? ' (interval 1 jam, 48 jam ke depan)' : '') + ' · kecepatan angin dikonversi ke km/j.';
+      hourlySubtitle.textContent = 'Prakiraan per jam ' + dataSourceName() + (step === 180 ? ' (interval 3 jam, 5 hari ke depan)' : step === 60 ? ' (interval 1 jam, 48 jam ke depan)' : '') + ' · kecepatan angin dikonversi ke km/j.';
     }
   }
 
@@ -452,7 +483,7 @@
     if (gauge) {
       gauge.style.setProperty('--aqi-angle', Math.min(360, Math.max(0, Number(data.index) / scaleMax * 360)) + 'deg');
       gauge.style.setProperty('--aqi-color', info.color);
-      gauge.setAttribute('aria-label', data.scale + (WEATHER_DATA.meta.live ? '' : ' snapshot') + ' ' + data.index + ', kategori ' + info.label + ', ' + (data.updatedAtLabel || WEATHER_DATA.meta.snapshotLabel));
+      gauge.setAttribute('aria-label', data.scale + (WEATHER_DATA.meta.live ? '' : ' snapshot') + ' ' + (data.index == null ? 'tanpa nilai' : data.index) + ', kategori ' + info.label + ', ' + (data.updatedAtLabel || WEATHER_DATA.meta.snapshotLabel));
     }
     var value = $('#aqi-value');
     var category = $('#aqi-category');
@@ -465,7 +496,9 @@
     if (summary) summary.textContent = info.summary;
     if (advice) advice.textContent = info.advice;
     var scaleTitle = $('#air-scale-title');
-    if (scaleTitle) scaleTitle.textContent = data.scale === 'OpenWeather AQI' ? 'Rentang kategori AQI OpenWeather (1–5)' : 'Rentang kategori AQI AccuWeather';
+    if (scaleTitle) scaleTitle.textContent = data.scale === 'OpenWeather AQI'
+      ? 'Rentang kategori AQI OpenWeather (1–5)'
+      : 'Rentang kategori US-EPA AQI ' + (data.scale || 'Open-Meteo') + ' (0–500)';
     var tbody = $('#pollutant-table-body');
     if (tbody) tbody.innerHTML = (data.pollutants || []).map(function (pollutant) {
       return '<tr><td><strong>' + escapeHTML(pollutant.name) + '</strong><small class="pollutant-description">' + escapeHTML(pollutant.description) + '</small></td><td>' + (pollutant.value == null ? '—' : escapeHTML(pollutant.value) + ' ' + escapeHTML(pollutant.unit)) + '</td><td>' + (pollutant.index == null ? '—' : escapeHTML(pollutant.index)) + '</td><td>' + (pollutant.category == null ? '—' : escapeHTML(pollutant.category)) + '</td></tr>';
@@ -479,11 +512,11 @@
     var uvLabel = !uvAvailable ? 'Tidak tersedia' : current.uvIndex >= 11 ? 'Ekstrem' : current.uvIndex >= 8 ? 'Sangat tinggi' : current.uvIndex >= 6 ? 'Tinggi' : current.uvIndex >= 3 ? 'Sedang' : 'Rendah';
     var heatLabel = feelsLikeC >= 35 ? 'Risiko panas tinggi' : feelsLikeC >= 32 ? 'Terasa panas' : feelsLikeC >= 28 ? 'Hangat' : 'Nyaman';
     var aqi = getAqiInfo(WEATHER_DATA.airQuality.index);
-    var sourceName = WEATHER_DATA.meta.live ? 'OpenWeather' : 'fallback lokal';
+    var sourceName = dataSourceName();
     var risks = [
       { icon: '☀️', title: 'Paparan UV', value: uvAvailable ? current.uvIndex + ' · ' + uvLabel : 'Tidak tersedia', copy: uvAvailable ? (current.uvIndex >= 8 ? 'Cari tempat teduh dan gunakan perlindungan matahari.' : 'Tetap gunakan perlindungan saat beraktivitas di luar.') : 'UV tidak ditampilkan pada data ini; jangan anggap nilainya nol.' },
       { icon: '🌡️', title: 'Panas terasa', value: formatTemp(current.feelsLike) + ' · ' + heatLabel, copy: 'Suhu terasa dari ' + sourceName + ' pada ' + current.observedAt + '.' },
-      { icon: '🌫️', title: 'Kualitas udara', value: 'AQI ' + WEATHER_DATA.airQuality.index + ' · ' + aqi.label, copy: (WEATHER_DATA.meta.live ? 'OpenWeather AQI' : 'Snapshot fallback') + '; kelompok sensitif sebaiknya membatasi aktivitas luar ruang bila tidak sehat.' },
+      { icon: '🌫️', title: 'Kualitas udara', value: 'AQI ' + WEATHER_DATA.airQuality.index + ' · ' + aqi.label, copy: aqiSourceName() + '; kelompok sensitif sebaiknya membatasi aktivitas luar ruang bila tidak sehat.' },
       { icon: '🌧️', title: 'Peluang hujan', value: current.rainChance == null ? 'Tidak tersedia' : current.rainChance + '%', copy: 'Peluang presipitasi ' + (current.rainWindow || 'pada interval berikutnya') + ' menurut ' + sourceName + '.' }
     ];
     var riskGrid = $('#health-risk-grid');
@@ -540,12 +573,12 @@
     var peakTime = $('#minute-peak-time');
     if (!values.length) {
       if (title) title.textContent = 'Prakiraan per menit belum tersedia';
-      if (copy) copy.textContent = 'Endpoint OpenWeather 1-minute timeline belum dapat dimuat; aktifkan One Call API 4.0 untuk data 60 menit ke depan.';
+      if (copy) copy.textContent = 'Timeline per menit hanya tersedia lewat OpenWeather One Call API 4.0; penyedia live saat ini (' + dataSourceName() + ') tidak menyediakannya, jadi grafik ini tetap simulasi.';
       if (peakValue) peakValue.textContent = '—';
       if (peakTime) peakTime.textContent = 'belum tersedia';
     } else {
       if (title) title.textContent = (peak < 20 ? 'Peluang hujan rendah' : peak < 50 ? 'Peluang hujan meningkat' : 'Ada interval dengan peluang hujan tinggi') + (isLiveMinute ? '' : ' pada simulasi ini');
-      if (copy) copy.textContent = 'Peluang tertinggi dalam ' + state.minuteWindow + ' menit ke depan diperkirakan sekitar ' + peak + '%. ' + (isLiveMinute ? 'Basis: prakiraan per menit OpenWeather One Call API 4.0.' : 'Ini pola contoh, bukan nowcast aktual.');
+      if (copy) copy.textContent = 'Peluang tertinggi dalam ' + state.minuteWindow + ' menit ke depan diperkirakan sekitar ' + peak + '%. ' + (isLiveMinute ? 'Basis: prakiraan per menit OpenWeather One Call API 4.0.' : 'Ini pola contoh, bukan nowcast aktual — penyedia live saat ini ' + dataSourceName() + ' tidak mengirim timeline per menit.');
       if (peakValue) peakValue.textContent = peak + '%';
       if (peakTime) peakTime.textContent = 'sekitar +' + minuteOffset + ' menit';
     }
@@ -644,12 +677,12 @@
         void button.offsetWidth;
         button.classList.add('refreshing');
         var status = $('#refresh-status');
-        if (status) status.textContent = 'Memuat data terbaru dari OpenWeather…';
+        if (status) status.textContent = 'Memuat data terbaru dari penyedia live…';
         loadLiveData().then(function (loaded) {
           renderAll();
           if (status) status.textContent = loaded
-            ? 'Data OpenWeather diperbarui ' + WEATHER_DATA.meta.snapshotLabel + '.'
-            : 'OpenWeather tidak dapat dihubungi; menampilkan data terakhir yang tersedia.';
+            ? 'Data live ' + dataSourceName() + ' diperbarui ' + WEATHER_DATA.meta.snapshotLabel + '.'
+            : 'Penyedia live tidak dapat dihubungi; menampilkan data terakhir yang tersedia.';
         });
       });
     });
@@ -743,33 +776,51 @@
     }
     var monthlyBadge = $('#monthly-data-badge');
     if (monthlyBadge) monthlyBadge.textContent = modules.monthly && modules.monthly.live ? 'Live' : 'Data contoh';
+    var airBadge = $('#air-data-badge');
+    if (airBadge) {
+      var airLive = Boolean(modules.airQuality && modules.airQuality.live);
+      airBadge.textContent = airLive ? 'Live · ' + aqiSourceName() : 'Fallback · bukan live';
+      airBadge.classList.toggle('data-badge-demo', !airLive);
+    }
+  }
+
+  function showHealthLink() {
+    var noticeLink = $('#data-notice-link');
+    if (!noticeLink) return;
+    noticeLink.textContent = 'Status sumber ↗';
+    noticeLink.setAttribute('href', 'api/health');
+    noticeLink.removeAttribute('target');
+    noticeLink.removeAttribute('rel');
   }
 
   function updateDataNotice() {
     var noticeText = $('#data-notice-text');
-    var noticeLink = $('#data-notice-link');
     var footerNote = $('#footer-data-note');
     var refreshStatus = $('#refresh-status');
-    if (WEATHER_DATA.meta.live) {
-      if (noticeText) noticeText.innerHTML = '<strong>Terhubung OpenWeather.</strong> Cuaca, prakiraan, per jam, menit, dan AQI diambil melalui proxy server CuacaKu (' + escapeHTML(WEATHER_DATA.meta.snapshotLabel) + '). Polling otomatis kira-kira setiap ' + Math.round((WEATHER_DATA.provider && WEATHER_DATA.provider.refreshIntervalSeconds || 600) / 60) + ' menit — bukan setiap detik. Radar tetap simulasi.';
-      if (noticeLink) {
-        noticeLink.textContent = 'Status sumber ↗';
-        noticeLink.setAttribute('href', 'api/health');
-        noticeLink.removeAttribute('target');
-        noticeLink.removeAttribute('rel');
-      }
-      if (footerNote) footerNote.textContent = 'Data cuaca OpenWeather via server CuacaKu (diperbarui ' + WEATHER_DATA.meta.snapshotLabel + ') · radar tetap simulasi · satu kalender bulanan berisi data contoh.';
+    var source = dataSourceName();
+    var reason = describeProviderFailure();
+    var refreshMinutes = Math.round((WEATHER_DATA.provider && WEATHER_DATA.provider.refreshIntervalSeconds || 600) / 60);
+
+    if (WEATHER_DATA.meta.live && source === 'OpenWeather') {
+      if (noticeText) noticeText.innerHTML = '<strong>Terhubung OpenWeather.</strong> Cuaca, prakiraan, per jam, dan AQI diambil melalui proxy server CuacaKu (' + escapeHTML(WEATHER_DATA.meta.snapshotLabel) + '). Polling otomatis kira-kira setiap ' + refreshMinutes + ' menit — bukan setiap detik. Radar tetap simulasi.';
+      showHealthLink();
+      if (footerNote) footerNote.textContent = 'Data live OpenWeather via server CuacaKu (diperbarui ' + WEATHER_DATA.meta.snapshotLabel + ') · radar tetap simulasi · satu kalender bulanan berisi data contoh.';
+    } else if (WEATHER_DATA.meta.live) {
+      var fallbackNote = WEATHER_DATA.meta.fallback && WEATHER_DATA.meta.fallback.from
+        ? 'OpenWeather tidak dapat dipakai' + (reason ? ' — ' + escapeHTML(reason) : '') + ', jadi server otomatis beralih ke ' + escapeHTML(source) + ' (gratis, tanpa API key). '
+        : '';
+      if (noticeText) noticeText.innerHTML = '<strong>Live via ' + escapeHTML(source) + '.</strong> ' + fallbackNote + 'Cuaca, prakiraan, per jam, dan kualitas udara (' + escapeHTML(aqiSourceName()) + ') dipakai apa adanya dari penyedia live; angka contoh tidak dipakai. MinuteCast per menit dan radar tetap simulasi karena butuh produk terpisah.';
+      showHealthLink();
+      if (footerNote) footerNote.textContent = 'Data live ' + source + ' via server CuacaKu (diperbarui ' + WEATHER_DATA.meta.snapshotLabel + ') · radar simulasi · satu kalender bulanan berisi data contoh.';
     } else {
-      if (noticeText) noticeText.innerHTML = '<strong>Data OpenWeather belum terhubung.</strong> Nilai yang tampil adalah fallback lokal yang ditandai jelas, bukan kondisi terkini. Jalankan server dengan <code>OPENWEATHER_API_KEY</code> untuk sinkronisasi live. Radar tetap simulasi.';
-      if (noticeLink) {
-        noticeLink.textContent = 'Cara mengaktifkan ↗';
-        noticeLink.setAttribute('href', 'https://openweathermap.org/api');
-        noticeLink.setAttribute('target', '_blank');
-        noticeLink.setAttribute('rel', 'noopener noreferrer');
-      }
-      if (footerNote) footerNote.textContent = 'Fallback lokal (bukan live) · jalankan server.js dengan OPENWEATHER_API_KEY untuk data OpenWeather · radar simulasi.';
+      if (noticeText) noticeText.innerHTML = '<strong>Penyedia live belum terhubung.</strong> Nilai yang tampil adalah fallback lokal yang ditandai jelas, bukan kondisi terkini.' + (reason ? ' Percobaan terakhir gagal: ' + escapeHTML(reason) + '.' : '') + ' Buka status sumber untuk melihat penyebabnya. Radar tetap simulasi.';
+      showHealthLink();
+      if (footerNote) footerNote.textContent = 'Fallback lokal (bukan live) · buka /api/health untuk status penyedia data · radar simulasi.';
     }
-    if (refreshStatus) refreshStatus.textContent = WEATHER_DATA.meta.live ? 'Data OpenWeather diperbarui ' + WEATHER_DATA.meta.snapshotLabel + '.' : 'OpenWeather belum terhubung; menampilkan fallback lokal.';
+
+    if (refreshStatus) refreshStatus.textContent = WEATHER_DATA.meta.live
+      ? 'Data live ' + source + ' diperbarui ' + WEATHER_DATA.meta.snapshotLabel + '.'
+      : 'Penyedia live belum terhubung; menampilkan fallback lokal.';
     setModuleStatus();
   }
 
@@ -785,13 +836,20 @@
     var suffix = typeof querySuffix === 'string' && querySuffix ? querySuffix : (window._cuacakuLocationQuery || '');
     return fetch('api/weather' + suffix, { headers: { accept: 'application/json' } }).then(function (response) {
       return response.json().then(function (body) {
-        if (!response.ok) throw new Error('API ' + response.status);
+        if (!response.ok) {
+          var failure = new Error('API ' + response.status);
+          failure.detail = body && body.error ? body.error : null;
+          throw failure;
+        }
         return body;
       });
     }).then(function (payload) {
+      state.lastError = null;
       if (mergeLivePayload(payload)) renderAll();
+      updateDataNotice();
       return true;
-    }).catch(function () {
+    }).catch(function (error) {
+      state.lastError = error && error.detail ? error.detail : { code: error && error.message ? error.message : 'WEATHER_REQUEST_FAILED' };
       updateDataNotice();
       return false;
     });

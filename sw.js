@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuacaku-sekitarku-v2';
+const CACHE_NAME = 'cuacaku-sekitarku-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
