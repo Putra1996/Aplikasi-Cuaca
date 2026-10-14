@@ -37,7 +37,7 @@
 
 **Langkah pasca-deploy (pemilik proyek).**
 
-1. Buka `/api/health` → pastikan `providers.fallback.enabled: true` dan baca `lastFetch` (penyedia yang benar-benar dipakai + rincian percobaan).
+1. Buka `/api/health` → pastikan `providers.fallback.enabled: true` dan baca `lastFetch` (penyedia yang benar-benar dipakai + rincian percobaan). Catatan: `lastFetch` bersifat **per-instance** serverless — instance dingin bisa menampilkan `null` sampai ada satu permintaan `/api/weather` yang masuk ke instance tersebut; ini diagnostik best-effort, bukan cache global.
 2. Buka `/api/weather?lat=-7.42&lon=109.24` → `meta.live: true`; `meta.source` menyebut OpenWeather atau Open-Meteo secara jujur; `meta.fallback` terisi bila cadangan dipakai.
 3. Bandingkan AQI kartu utama dengan panel Sekitarku — keduanya harus menampilkan angka yang sama.
 4. Bila OpenWeather tetap `OPENWEATHER_UNREACHABLE` dari Vercel, dashboard tetap live dari Open-Meteo; perbaikan key/langganan OpenWeather kini bersifat opsional, bukan syarat situs hidup.
