@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Dashboard cuaca Klumprit, Jawa Tengah: prakiraan 10 hari, per jam, minute forecast, radar, cuaca bulanan, kualitas udara, dan kesehatan. Live melalui OpenWeather dengan fallback lokal yang ditandai jelas.">
+  <meta name="description" content="Dashboard cuaca Klumprit, Jawa Tengah: prakiraan 10 hari, per jam, minute forecast, radar, cuaca bulanan, kualitas udara, dan kesehatan. Live via OpenWeather dengan cadangan Open-Meteo, plus fallback lokal yang ditandai jelas.">
   <meta name="keywords" content="cuaca, Klumprit, Jawa Tengah, prakiraan, radar, kualitas udara, OpenWeather">
   <meta name="author" content="CuacaKu">
   <meta name="theme-color" content="#0f172a">
   <meta property="og:title" content="Cuaca Klumprit — CuacaKu">
-  <meta property="og:description" content="Dashboard cuaca Klumprit dengan prakiraan, radar, minute forecast, kualitas udara, dan aktivitas. Sumber live OpenWeather dengan fallback lokal yang ditandai jelas.">
+  <meta property="og:description" content="Dashboard cuaca Klumprit dengan prakiraan, radar, minute forecast, kualitas udara, dan aktivitas. Sumber live OpenWeather (cadangan Open-Meteo) dengan fallback lokal yang ditandai jelas.">
   <meta property="og:type" content="website">
   <title>Cuaca Klumprit — CuacaKu</title>
   <link rel="stylesheet" href="css/style.css">
@@ -22,7 +22,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛅</text></svg>">
 </head>
 <body>
-  <noscript><div class="noscript-notice">CuacaKu membutuhkan JavaScript untuk menampilkan dashboard. Aktifkan JavaScript atau buka OpenWeather untuk data cuaca terkini.</div></noscript>
+  <noscript><div class="noscript-notice">CuacaKu membutuhkan JavaScript untuk menampilkan dashboard. Aktifkan JavaScript untuk melihat data live OpenWeather/Open-Meteo beserta fallback lokal yang ditandai jelas.</div></noscript>
   <div id="loading-screen" class="loading-screen" aria-live="polite">
     <div class="loader" aria-hidden="true">
       <div class="loader-sun"></div>
@@ -88,8 +88,8 @@
 
     <div class="data-notice" role="note">
       <span class="data-notice-icon" aria-hidden="true">ⓘ</span>
-      <p id="data-notice-text"><strong>Data OpenWeather belum terhubung.</strong> Nilai yang tampil adalah fallback lokal yang ditandai jelas, bukan kondisi terkini. Jalankan server dengan <code>OPENWEATHER_API_KEY</code> untuk sinkronisasi live. Radar tetap simulasi.</p>
-      <a id="data-notice-link" href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer">Cara mengaktifkan ↗</a>
+      <p id="data-notice-text"><strong>Memeriksa penyedia data live…</strong> CuacaKu memakai OpenWeather sebagai sumber utama dan otomatis beralih ke Open-Meteo (live, tanpa API key) bila OpenWeather tidak dapat dijangkau. Bila kedua penyedia gagal, nilai yang tampil adalah fallback lokal yang ditandai jelas. Radar tetap simulasi.</p>
+      <a id="data-notice-link" href="api/health">Status sumber ↗</a>
     </div>
     <p id="refresh-status" class="sr-only" aria-live="polite"></p>
 
@@ -101,7 +101,7 @@
             <span class="location-icon" aria-hidden="true">📍</span>
             <div>
               <h1 class="location-name" id="location-name">Klumprit, Jawa Tengah</h1>
-              <p class="location-detail" id="location-detail">Indonesia · memuat data OpenWeather…</p>
+              <p class="location-detail" id="location-detail">Indonesia · memuat data live…</p>
             </div>
           </div>
           <div class="hero-sekitarku-toolbar" role="toolbar" aria-label="Kontrol Nasional 500+ Kota, GPS, dan Infografis">
@@ -329,7 +329,7 @@
 
     <main id="tab-harian" class="tab-content" aria-label="Prakiraan 10 hari">
       <section class="section">
-        <div class="section-heading-row"><div><h1 class="section-title">📅 Prakiraan 10 Hari</h1><p class="section-subtitle" id="daily-period">Klumprit, Jawa Tengah · memuat prakiraan OpenWeather…</p></div><span class="data-badge">10 hari</span></div>
+        <div class="section-heading-row"><div><h1 class="section-title">📅 Prakiraan 10 Hari</h1><p class="section-subtitle" id="daily-period">Klumprit, Jawa Tengah · memuat prakiraan live…</p></div><span class="data-badge">10 hari</span></div>
         <p class="section-note">Pilih satu hari untuk melihat rincian peluang hujan, kelembapan, angin, dan indeks UV.</p>
         <div class="daily-forecast-list" id="daily-forecast-list"></div>
       </section>
@@ -342,7 +342,7 @@
     <main id="tab-per-jam" class="tab-content" aria-label="Prakiraan per jam">
       <section class="section">
         <h1 class="section-title">🕐 Prakiraan Per Jam</h1>
-        <p class="section-subtitle" id="hourly-subtitle">Prakiraan per jam dari OpenWeather · interval mengikuti produk yang tersedia.</p>
+        <p class="section-subtitle" id="hourly-subtitle">Prakiraan per jam dari penyedia live · interval mengikuti produk yang tersedia.</p>
         <div class="hourly-tabs" role="group" aria-label="Pilih tanggal prakiraan per jam">
           <button class="hourly-tab active" type="button" data-day="today" aria-pressed="true">Hari ini</button>
           <button class="hourly-tab" type="button" data-day="tomorrow" aria-pressed="false">Besok</button>
@@ -452,8 +452,8 @@
 
     <main id="tab-udara" class="tab-content" aria-label="Kualitas udara">
       <section class="section">
-        <div class="section-heading-row"><div><h1 class="section-title">🌫️ Kualitas Udara</h1><p class="section-subtitle">AQI dan konsentrasi polutan OpenWeather Air Pollution API.</p></div><span class="data-badge data-badge-demo">Fallback · bukan live</span></div>
-        <div class="feature-callout" role="note"><strong>Periksa waktu data:</strong> nilai di bawah berasal dari fallback lokal sampai server terhubung ke OpenWeather. Untuk AQI Indonesia yang resmi, gunakan ISPU dari KLHK. <a href="https://openweathermap.org/api/air-pollution" target="_blank" rel="noopener noreferrer">Dokumentasi Air Pollution API ↗</a></div>
+        <div class="section-heading-row"><div><h1 class="section-title">🌫️ Kualitas Udara</h1><p class="section-subtitle">AQI dan konsentrasi polutan dari penyedia live (OpenWeather Air Pollution API, cadangan US-EPA AQI Open-Meteo/Copernicus).</p></div><span class="data-badge data-badge-demo" id="air-data-badge">Fallback · bukan live</span></div>
+        <div class="feature-callout" role="note"><strong>Periksa waktu data:</strong> badge menandai apakah nilai berasal dari penyedia live atau fallback lokal. Untuk AQI Indonesia yang resmi, gunakan ISPU dari KLHK. <a href="https://openweathermap.org/api/air-pollution" target="_blank" rel="noopener noreferrer">Dokumentasi Air Pollution API ↗</a></div>
         <div class="air-quality-layout">
           <div class="aqi-card">
             <div class="aqi-gauge" id="aqi-gauge" role="img" aria-label="AQI fallback: 205, Sangat Tidak Sehat, snapshot 12 Oktober 2026 21:37 WIB">
@@ -465,14 +465,14 @@
             <div class="table-responsive"><table class="data-table pollutant-table"><thead><tr><th scope="col">Parameter</th><th scope="col">Konsentrasi</th><th scope="col">Sub-indeks</th><th scope="col">Kategori</th></tr></thead><tbody id="pollutant-table-body"></tbody></table></div>
           </div>
         </div>
-        <div class="air-scale-card"><strong id="air-scale-title">Rentang kategori AQI AccuWeather</strong><div class="air-scale"><span class="scale-good">0–19<br>Bagus Sekali</span><span class="scale-moderate">20–49<br>Lumayan</span><span class="scale-poor">50–99<br>Buruk</span><span class="scale-unhealthy">100–149<br>Tidak Sehat</span><span class="scale-very-unhealthy">150–249<br>Sangat Tidak Sehat</span><span class="scale-hazardous">250+<br>Berbahaya</span></div><p id="air-scale-note">Saat live, skala mengikuti AQI OpenWeather 1–5 (Baik hingga Sangat Buruk); fallback lokal memakai rentang AccuWeather lama.</p></div>
+        <div class="air-scale-card"><strong id="air-scale-title">Rentang kategori US-EPA AQI (0–500)</strong><div class="air-scale"><span class="scale-good">0–19<br>Bagus Sekali</span><span class="scale-moderate">20–49<br>Lumayan</span><span class="scale-poor">50–99<br>Buruk</span><span class="scale-unhealthy">100–149<br>Tidak Sehat</span><span class="scale-very-unhealthy">150–249<br>Sangat Tidak Sehat</span><span class="scale-hazardous">250+<br>Berbahaya</span></div><p id="air-scale-note">Saat live via OpenWeather, skala mengikuti AQI 1–5 (Baik hingga Sangat Buruk); saat live via Open-Meteo, skala US-EPA 0–500; fallback lokal memakai rentang lama dan ditandai jelas.</p></div>
       </section>
     </main>
 
     <main id="tab-aktivitas" class="tab-content" aria-label="Kesehatan dan aktivitas">
       <section class="section">
         <div class="section-heading-row"><div><h1 class="section-title">🏃 Kesehatan & Aktivitas</h1><p class="section-subtitle">Panduan berbasis cuaca & AQI terbaru yang tersedia; UV diperhitungkan bila datanya ada.</p></div><span class="data-badge data-badge-demo">Panduan umum</span></div>
-        <div class="feature-callout" role="note"><strong>Catatan keselamatan:</strong> skor aktivitas adalah heuristik, bukan saran medis. Saat kualitas udara buruk, tunda aktivitas luar ruang dan ikuti anjuran otoritas. Sumber data OpenWeather ketika live; fallback lokal bukan kondisi terkini.</div>
+        <div class="feature-callout" role="note"><strong>Catatan keselamatan:</strong> skor aktivitas adalah heuristik, bukan saran medis. Saat kualitas udara buruk, tunda aktivitas luar ruang dan ikuti anjuran otoritas. Sumber data live (OpenWeather atau cadangan Open-Meteo); fallback lokal bukan kondisi terkini.</div>
         <div class="health-risk-grid" id="health-risk-grid"></div>
         <section class="section section-inset"><div class="section-heading-row"><div><h2 class="section-title">Rekomendasi aktivitas</h2><p class="section-subtitle">Skor 0–100 yang dihitung dari faktor risiko contoh.</p></div><span class="score-legend">Skor tinggi = kondisi relatif lebih mendukung</span></div><div class="activity-grid" id="activity-grid"></div></section>
         <div class="health-advice-card"><span aria-hidden="true">🛡️</span><div><strong>Praktik aman di luar ruang</strong><p>Periksa prakiraan aktual sebelum berangkat, cukup minum, cari tempat teduh saat UV tinggi, dan hentikan aktivitas bila merasa tidak sehat.</p></div></div>
@@ -534,9 +534,9 @@
           <div class="about-content">
             <div class="about-block"><h2>📍 Lokasi</h2><p>Dashboard demonstrasi untuk Klumprit, Jawa Tengah, Indonesia. Titik acuan: −7.42, 109.24 (perkiraan). Zona waktu: WIB (UTC+7).</p></div>
             <div class="about-block"><h2>🧭 Fitur</h2><div class="features-grid">
-              <div class="feature-item"><span aria-hidden="true">🌡️</span><p>Cuaca saat ini (OpenWeather)</p></div><div class="feature-item"><span aria-hidden="true">📅</span><p>Prakiraan 10 hari</p></div><div class="feature-item"><span aria-hidden="true">🕐</span><p>Prakiraan per jam</p></div><div class="feature-item"><span aria-hidden="true">🌧️</span><p>Minute forecast</p></div><div class="feature-item"><span aria-hidden="true">🗺️</span><p>Radar skematis</p></div><div class="feature-item"><span aria-hidden="true">📊</span><p>Kalender & tren bulanan</p></div><div class="feature-item"><span aria-hidden="true">🌫️</span><p>AQI OpenWeather</p></div><div class="feature-item"><span aria-hidden="true">🏃</span><p>Indeks aktivitas heuristik</p></div>
+              <div class="feature-item"><span aria-hidden="true">🌡️</span><p>Cuaca saat ini (OpenWeather/Open-Meteo)</p></div><div class="feature-item"><span aria-hidden="true">📅</span><p>Prakiraan 10 hari</p></div><div class="feature-item"><span aria-hidden="true">🕐</span><p>Prakiraan per jam</p></div><div class="feature-item"><span aria-hidden="true">🌧️</span><p>Minute forecast</p></div><div class="feature-item"><span aria-hidden="true">🗺️</span><p>Radar skematis</p></div><div class="feature-item"><span aria-hidden="true">📊</span><p>Kalender & tren bulanan</p></div><div class="feature-item"><span aria-hidden="true">🌫️</span><p>AQI OpenWeather / US-EPA Open-Meteo</p></div><div class="feature-item"><span aria-hidden="true">🏃</span><p>Indeks aktivitas heuristik</p></div>
             </div></div>
-            <div class="about-block"><h2>⚠️ Tentang data</h2><p>Dashboard ini mengambil data cuaca Klumprit dari <strong>OpenWeather</strong> melalui proxy di server.js. API key hanya hidup sebagai environment variable di server dan tidak pernah masuk ke JavaScript browser. Saat key tersedia, cuaca saat ini, prakiraan, kualitas udara, dan minute forecast diperbarui otomatis sekitar setiap 10 menit — mengikuti periode update model OpenWeather, bukan polling setiap detik. Bila key belum dikonfigurasi atau langganan belum aktif, antarmuka menampilkan fallback lokal yang ditandai jelas, bukan angka palsu. Radar tetap simulasi; kalender bulanan memakai data contoh; skor kesehatan bukan diagnosis atau nasihat medis.</p><p class="about-source">Dokumen resmi sumber data: <a href="https://openweathermap.org/api/one-call-4" target="_blank" rel="noopener noreferrer">One Call API 4.0</a> · <a href="https://openweathermap.org/api/current" target="_blank" rel="noopener noreferrer">Current Weather</a> · <a href="https://openweathermap.org/api/forecast5" target="_blank" rel="noopener noreferrer">5-day Forecast</a> · <a href="https://openweathermap.org/api/air-pollution" target="_blank" rel="noopener noreferrer">Air Pollution</a> · <a href="https://openweathermap.org/api/weathermaps" target="_blank" rel="noopener noreferrer">Weather Maps</a> · <a href="https://openweathermap.org/api/one-call-4-desciption" target="_blank" rel="noopener noreferrer">Product features</a>.</p></div>
+            <div class="about-block"><h2>⚠️ Tentang data</h2><p>Dashboard ini mengambil data cuaca melalui fungsi serverless <strong>/api/weather</strong> (atau <code>scripts/dev-server.js</code> pada host Node.js). Sumber utama adalah <strong>OpenWeather</strong>; bila OpenWeather tidak dapat dijangkau atau API key belum diatur, server otomatis beralih ke <strong>Open-Meteo</strong> yang live tanpa API key, dan payload selalu menyebutkan sumbernya. API key hanya hidup sebagai environment variable di server dan tidak pernah masuk ke JavaScript browser. Cuaca saat ini, prakiraan, kualitas udara, dan minute forecast diperbarui otomatis sekitar setiap 10 menit. Hanya bila kedua penyedia gagal, antarmuka menampilkan fallback lokal yang ditandai jelas, bukan angka palsu. Radar tetap simulasi; kalender bulanan memakai data contoh; skor kesehatan bukan diagnosis atau nasihat medis.</p><p class="about-source">Dokumen resmi sumber data: <a href="https://openweathermap.org/api/one-call-4" target="_blank" rel="noopener noreferrer">One Call API 4.0</a> · <a href="https://openweathermap.org/api/current" target="_blank" rel="noopener noreferrer">Current Weather</a> · <a href="https://openweathermap.org/api/forecast5" target="_blank" rel="noopener noreferrer">5-day Forecast</a> · <a href="https://openweathermap.org/api/air-pollution" target="_blank" rel="noopener noreferrer">Air Pollution</a> · <a href="https://openweathermap.org/api/weathermaps" target="_blank" rel="noopener noreferrer">Weather Maps</a> · <a href="https://openweathermap.org/api/one-call-4-desciption" target="_blank" rel="noopener noreferrer">Product features</a> · <a href="https://open-meteo.com/en/docs" target="_blank" rel="noopener noreferrer">Open-Meteo (cadangan live)</a>.</p></div>
             <div class="about-block"><h2>⚙️ Teknologi</h2><div class="tech-tags"><span class="tech-tag">HTML5</span><span class="tech-tag">CSS3</span><span class="tech-tag">Vanilla JavaScript</span><span class="tech-tag">Canvas API</span><span class="tech-tag">Tanpa dependensi runtime</span><span class="tech-tag">Responsive</span></div></div>
           </div>
         </div>
@@ -544,7 +544,7 @@
     </main>
 
     <footer class="footer">
-      <div class="footer-inner"><p>© 2026 CuacaKu × Sekitarku — Dashboard Cuaca, AQI, Gempa BMKG &amp; Gunung Api 500+ Kota Indonesia</p><p class="footer-small" id="footer-data-note">Fallback lokal (bukan live) · jalankan server.js dengan OPENWEATHER_API_KEY untuk data OpenWeather · radar simulasi.</p></div>
+      <div class="footer-inner"><p>© 2026 CuacaKu × Sekitarku — Dashboard Cuaca, AQI, Gempa BMKG &amp; Gunung Api 500+ Kota Indonesia</p><p class="footer-small" id="footer-data-note">Memuat status sumber data · buka /api/health untuk rincian · radar simulasi.</p></div>
     </footer>
   </div>
 

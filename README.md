@@ -22,15 +22,20 @@ Dibangun ringan dan **PWA-ready** menggunakan HTML5, CSS3, dan Vanilla JavaScrip
 ## Arsitektur data
 
 ```
-Browser (app.js) ── same-origin ──> /api/weather ── HTTPS + API key ──> OpenWeather API
+Browser (app.js) ── same-origin ──> /api/weather
+                                        │
+                                        ├─ 1. OpenWeather (One Call 4.0 → Current + 5-day/3-hour + Air Pollution)
+                                        ├─ 2. Open-Meteo (live, tanpa API key) — dipakai bila OpenWeather gagal
+                                        ├─ 3. Bila keduanya gagal: 502 WEATHER_PROVIDERS_UNAVAILABLE + attempts[]
                                         │
                                         ├─ Vercel: fungsi serverless api/weather.js + api/health.js
                                         ├─ Lokal/VPS: scripts/dev-server.js (statis + proxy)
-                                        └─ Logika bersama: lib/openweather.js · cache 10 menit
+                                        └─ Logika bersama: lib/openweather.js + lib/sekitarku.js · cache 10 menit
 ```
 
-- **Live:** proxy server-side (`lib/openweather.js`) mengambil Current Weather, One Call 4.0 (current/1min/1h/1day), dan Air Pollution API, lalu menormalkannya ke payload tunggal `/api/weather`. UI melakukan polling ringan sekitar **setiap 10 menit** — mengikuti periode update model OpenWeather, bukan setiap detik. Kunci API **tidak pernah** dikirim ke browser.
-- **Fallback:** bila key belum dikonfigurasi / langganan belum aktif / jaringan bermasalah, UI menampilkan `js/data.js` (snapshot lokal 12 Okt 2026 yang ditandai jelas sebagai *fallback lokal · bukan live*), lengkap dengan banner status. Tidak ada angka palsu yang diklaim live.
+- **Live:** proxy server-side (`lib/openweather.js`) mengambil Current Weather, One Call 4.0 (current/1min/1h/1day), dan Air Pollution API bila API key tersedia, lalu menormalkannya ke payload tunggal `/api/weather`. UI melakukan polling ringan sekitar **setiap 10 menit** — mengikuti periode update model, bukan setiap detik. Kunci API **tidak pernah** dikirim ke browser.
+- **Rantai cadangan (audit 14 Okt 2026):** bila OpenWeather tidak dapat dijangkau atau API key belum diatur, server otomatis beralih ke **Open-Meteo** (gratis, tanpa key) dan menandainya di payload (`meta.source`, `meta.fallback`, `provider.modules`). MinuteCast per menit dan radar tetap ditandai simulasi karena butuh produk terpisah.
+- **Fallback terakhir:** hanya bila kedua penyedia live gagal, UI menampilkan `js/data.js` (snapshot lokal 12 Okt 2026 yang ditandai jelas sebagai *fallback lokal · bukan live*), lengkap dengan banner status + penyebab kegagalan dari `attempts[]`. Tidak ada angka palsu yang diklaim live; `null`/`—` dipakai bila sebuah nilai tidak tersedia.
 - **Produk yang butuh langganan terpisah** dilaporkan apa adanya di `payload.provider.modules`: One Call 4.0 (minute forecast, UV, 10 hari, timeline per bulan) dan Weather Maps/Global Precipitation Maps (peta hujan) — endpoint dasar tetap hidup tanpa One Call.
 
 ## Menjalankan lokal
@@ -53,6 +58,9 @@ Lalu buka `http://localhost:8000`. Tanpa `.env`, server tetap berjalan dan UI me
 | `OPENWEATHER_LAT` / `OPENWEATHER_LON` | `-7.42` / `109.24` | Koordinat Klumprit. |
 | `OPENWEATHER_REFRESH_SECONDS` | `600` | Interval cache server (minimum 600 detik). |
 | `OPENWEATHER_ONE_CALL_ENABLED` | `true` | Nonaktifkan bila tidak subscribe One Call. |
+| `OPEN_METEO_FALLBACK_ENABLED` | `true` | Nonaktifkan (`false`) untuk mematikan cadangan Open-Meteo. |
+| `OPEN_METEO_WEATHER_BASE` / `OPEN_METEO_AQI_BASE` | `https://api.open-meteo.com` / `https://air-quality-api.open-meteo.com` | Basis URL Open-Meteo (berguna untuk mock/pengujian). |
+| `BMKG_API_BASE` | `https://data.bmkg.go.id` | Basis BMKG InaTEWS untuk modul Sekitarku. |
 | `PORT` / `HOST` | `8000` / `0.0.0.0` | Bind server. |
 
 ## Deployment
@@ -62,8 +70,8 @@ Lalu buka `http://localhost:8000`. Tanpa `.env`, server tetap berjalan dan UI me
 Repo ini sudah berbentuk **situs statis + fungsi serverless** yang dipahami Vercel tanpa konfigurasi tambahan:
 
 1. Import repo di Vercel (framework preset otomatis **Other** — dipaksa oleh `"framework": null` di `vercel.json`).
-2. Di **Project Settings → Environment Variables**, tambahkan `OPENWEATHER_API_KEY` (plus variabel opsional lain bila perlu).
-3. Deploy. Verifikasi `https://<domain>/api/health` → `configured: true`, lalu `/api/weather` → `meta.live: true`.
+2. Di **Project Settings → Environment Variables**, tambahkan `OPENWEATHER_API_KEY` (opsional — tanpa key, situs tetap live via Open-Meteo).
+3. Deploy. Verifikasi `https://<domain>/api/health` → `providers.fallback.enabled: true` + `lastFetch` (penyedia yang benar-benar dipakai), lalu `/api/weather` → `meta.live: true` dan `meta.source` jujur (`OpenWeather` atau `Open-Meteo`).
 
 > ⚠️ **Jangan membuat file `server.js`/`server.ts` di root repo.** Vercel akan otomatis mendeteksinya sebagai framework "Node" dan membungkus seluruh situs sebagai satu fungsi — inilah penyebab insiden `500 FUNCTION_INVOCATION_FAILED` (lihat `AUDIT.md`). Ada tes regresi yang menjaga hal ini.
 
@@ -74,7 +82,7 @@ Jalankan `node scripts/dev-server.js` dengan `OPENWEATHER_API_KEY` sebagai **sec
 ## Pemeriksaan
 
 ```sh
-node --test tests/*.test.js    # 26 tes: data, normalisasi, keamanan key, e2e proxy + fungsi Vercel
+node --test tests/*.test.js    # 39 tes: data, normalisasi, keamanan key, e2e proxy, rantai cadangan Open-Meteo + fungsi Vercel
 node --check js/data.js js/app.js js/charts.js js/radar.js lib/openweather.js scripts/dev-server.js api/weather.js api/health.js
 git diff --check
 ```
@@ -82,6 +90,7 @@ git diff --check
 ## Batasan yang jujur
 
 - **Radar** tetap simulasi skematis. Peta presipitasi OpenWeather (Weather Maps 1.0 / Global Precipitation Maps) membutuhkan produk/subscription yang terpisah; hingga tersedia, tampilan radar ditandai "Bukan radar live".
+- **Saat cadangan Open-Meteo dipakai**: prakiraan dibatasi 7 hari (bukan 10), tidak ada MinuteCast per menit, dan AQI memakai skala US-EPA Open-Meteo/Copernicus (bukan ISPU). Semua itu ditandai di `meta.source`, `meta.fallback`, dan badge antarmuka.
 - **Kalender Per Bulan** memakai data contoh lokal untuk Oktober 2026 (ada 1 hari yang diketahui kosong). Timeline per bulan otomatis memerlukan akses One Call 4.0.
 - Satuan internal mengikuti pipeline Fahrenheit dari API (units imperial) lalu diformat ke Celsius oleh UI; angin dikonversi ke km/jam.
 - Skor kesehatan/aktivitas adalah heuristik antarmuka, bukan penilaian medis.

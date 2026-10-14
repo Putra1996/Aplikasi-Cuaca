@@ -1,5 +1,49 @@
 # AUDIT — CuacaKu (Klumprit, Jawa Tengah)
 
+## 🔴 Audit 14 Oktober 2026 — dashboard utama jatuh ke data contoh saat OpenWeather mati
+
+**Gejala (diverifikasi langsung pada produksi `aplikasicuaca-omega.vercel.app`).**
+
+- `/api/health` melaporkan `configured: true` (API key terpasang), tetapi `/api/weather` mengembalikan `502 OPENWEATHER_UNREACHABLE` untuk semua permintaan.
+- Akibatnya kartu utama menampilkan snapshot lokal: **AQI 205 “Sangat Tidak Sehat”**, sementara panel Sekitarku (Open-Meteo + BMKG, `live: true`) menampilkan **AQI 94 “Sedang”** — satu halaman, dua kebenaran.
+- Banner menyuruh “Jalankan server dengan `OPENWEATHER_API_KEY`” padahal key sudah ada; penyebab sebenarnya (host OpenWeather tidak dapat dijangkau dari fungsi serverless di region `sin1`) tidak pernah disebut pengguna.
+
+**Temuan tambahan dari pembacaan kode.**
+
+| # | Temuan | Dampak |
+| --- | --- | --- |
+| 1 | `/api/weather` tidak punya cadangan live; integrasi Open-Meteo hanya ada di modul Sekitarku sisi klien | Satu hambatan jaringan → seluruh kartu utama jadi data contoh |
+| 2 | `applyBundleToCuacaKu()` menaikkan `meta.live = true` setiap kali `bundle.meta.live` benar, padahal flag itu = `weather.live \|\| aqi.live \|\| bmkg.live` | Cuaca contoh bisa ditampilkan sebagai “live” |
+| 3 | `buildCuacaKuCompatibleWeather()` mengarang `sunrise: '05:32'`, `sunset: '17:48'`, `visibility: 10`, `gust = kecepatan × 1,4` | Angka fiktif tampil berdampingan dengan data asli |
+| 4 | Ambang label AQI berbeda antar kartu: kartu utama memakai 19/49/99/149 (warisan AccuWeather), kartu Sekitarku memakai US-EPA 50/100/150/200/300 | AQI 62 disebut “Buruk” di satu kartu dan “Sedang” di kartu lain |
+| 5 | Teks bantuan masih menunjuk berkas `server.js` yang dihapus pada audit 13 Okt (index.html ×2, js/app.js, js/data.js) | Instruksi pemulihan yang salah |
+| 6 | `/api/health` hanya melaporkan konfigurasi, bukan hasil pengambilan data terakhir | Insiden ini tidak terlihat dari health check |
+
+**Perbaikan.**
+
+| Perubahan | Alasan |
+| --- | --- |
+| Rantai penyedia di sisi server: OpenWeather (One Call → endpoint dasar) → **Open-Meteo (live, tanpa API key)** → `502 WEATHER_PROVIDERS_UNAVAILABLE` + `attempts[]` bila keduanya gagal | Satu penyedia mati tidak lagi menghentikan dashboard |
+| Payload cadangan ditandai eksplisit: `meta.source = 'Open-Meteo'`, `meta.fallback.from/reason`, `provider.name`, `provider.modules.*` (MinuteCast & radar tetap `live:false`) | Tidak ada klaim “OpenWeather” untuk data Open-Meteo |
+| `OPENWEATHER_UNREACHABLE` tidak lagi mencoba endpoint dasar OpenWeather | Menghemat ~10 detik; batas fungsi Vercel 30 detik |
+| `wind_gusts_10m`, `visibility`, `sunrise`, `sunset` diambil dari Open-Meteo; `null`/`—` bila tidak tersedia; permintaan diulang tanpa variabel opsional bila API menolaknya | Berhenti mengarang nilai; data live tetap mengalir |
+| Hanya `compat.live === true` yang boleh menggantikan payload utama, dan `meta.source` diset ke `'Open-Meteo'` | Data contoh tidak pernah lagi dipromosikan sebagai live |
+| Ambang & label AQI kartu utama diselaraskan ke US-EPA (50/100/150/200/300) dan ambang saran aktivitas menjadi 101 | Satu angka, satu kategori, di kedua kartu |
+| Banner tiga status jujur (live OpenWeather / live Open-Meteo / fallback lokal) + tautan `api/health` + penyebab kegagalan dari respons API | Pengguna tahu persis sumber dan penyebabnya |
+| `/api/health` menambah `providers` dan `lastFetch` (penyedia yang dipakai, `fallbackUsed`, rincian `attempts`) | Insiden serupa langsung terlihat |
+| `sw.js` cache dinaikkan ke `cuacaku-sekitarku-v3` | Klien PWA menerima aset baru |
+
+**Verifikasi.** `npm test` → **39/39 lulus**, termasuk tes regresi baru: (a) OpenWeather mati → `/api/weather` tetap `live: true` via Open-Meteo lengkap dengan `fallback.attempts[0].code = OPENWEATHER_UNREACHABLE`; (b) semua penyedia mati → `502 WEATHER_PROVIDERS_UNAVAILABLE` + rincian dua percobaan; (c) variabel opsional ditolak API → permintaan diulang dan nilai hilang tetap `null`/`—`; (d) label AQI kedua kartu identik; (e) klien hanya menyebut penyedia yang benar dan tidak mempromosikan data contoh sebagai live. `node --check` lulus untuk semua berkas; `git diff --check` bersih.
+
+**Langkah pasca-deploy (pemilik proyek).**
+
+1. Buka `/api/health` → pastikan `providers.fallback.enabled: true` dan baca `lastFetch` (penyedia yang benar-benar dipakai + rincian percobaan).
+2. Buka `/api/weather?lat=-7.42&lon=109.24` → `meta.live: true`; `meta.source` menyebut OpenWeather atau Open-Meteo secara jujur; `meta.fallback` terisi bila cadangan dipakai.
+3. Bandingkan AQI kartu utama dengan panel Sekitarku — keduanya harus menampilkan angka yang sama.
+4. Bila OpenWeather tetap `OPENWEATHER_UNREACHABLE` dari Vercel, dashboard tetap live dari Open-Meteo; perbaikan key/langganan OpenWeather kini bersifat opsional, bukan syarat situs hidup.
+
+---
+
 ## 🔴 Audit insiden 13 Oktober 2026 — Vercel `500 FUNCTION_INVOCATION_FAILED`
 
 **Gejala.** `aplikasicuaca-omega.vercel.app` mengembalikan `500: INTERNAL_SERVER_ERROR · FUNCTION_INVOCATION_FAILED` (region `sin1`) untuk **semua** halaman, termasuk halaman utama.

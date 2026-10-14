@@ -1,7 +1,7 @@
 /**
  * Fallback lokal CuacaKu — snapshot AccuWeather bertimestamp (12 Okt 2026, 21:37 WIB).
  * Data ini HANYA dipakai bila server belum mengembalikan payload OpenWeather
- * (lihat server.js → /api/weather). Bukan feed live. Radar, MinuteCast,
+ * (lihat /api/weather: fungsi serverless Vercel atau scripts/dev-server.js). Bukan feed live. Radar, MinuteCast,
  * dan data bulanan tetap berstatus simulasi lokal.
  */
 
