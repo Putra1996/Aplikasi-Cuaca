@@ -10,11 +10,15 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..', '..');
 const weather = require(path.join(root, 'api', 'weather.js'));
 const health = require(path.join(root, 'api', 'health.js'));
+const sekitarku = require(path.join(root, 'api', 'sekitarku.js'));
+const widget = require(path.join(root, 'api', 'widget.js'));
 
 const server = http.createServer((request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   if (pathname === '/api/weather') return weather(request, response);
   if (pathname === '/api/health') return health(request, response);
+  if (pathname === '/api/sekitarku') return sekitarku(request, response);
+  if (pathname === '/api/widget') return widget(request, response);
   response.writeHead(404, { 'content-type': 'application/json' });
   response.end('{"error":"not found"}');
 });

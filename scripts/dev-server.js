@@ -1,7 +1,8 @@
 'use strict';
 
 // Server pengembangan/produksi self-host (Railway/Render/VPS):
-// menyajikan file statis + proxy OpenWeather yang sama dengan fungsi Vercel.
+// menyajikan file statis + proxy OpenWeather & Sekitarku (BMKG + Open-Meteo + PVMBG)
+// yang sama dengan fungsi serverless Vercel.
 // Jalankan: npm start (atau: node scripts/dev-server.js)
 
 const http = require('node:http');
@@ -10,6 +11,8 @@ const path = require('node:path');
 const { URL } = require('node:url');
 
 const { getCachedWeather, sendJson, apiError, healthPayload } = require('../lib/openweather.js');
+const sekitarkuHandler = require('../api/sekitarku.js');
+const widgetHandler = require('../api/widget.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = process.env.PORT != null && String(process.env.PORT).trim() !== '' ? Number(process.env.PORT) : 8000;
@@ -21,6 +24,7 @@ const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -62,7 +66,7 @@ function serveStatic(request, response, pathname) {
     response.writeHead(200, {
       'content-type': type,
       'content-length': stats.size,
-      'cache-control': path.extname(filePath) === '.html' ? 'no-cache' : 'public, max-age=300',
+      'cache-control': (path.extname(filePath) === '.html' || path.basename(filePath) === 'sw.js') ? 'no-cache' : 'public, max-age=300',
       'x-content-type-options': 'nosniff'
     });
     if (request.method === 'HEAD') return response.end();
@@ -85,12 +89,24 @@ function createServer() {
     }
     if (pathname === '/api/weather') {
       try {
-        const payload = await getCachedWeather();
+        const payload = await getCachedWeather({
+          lat: requestUrl.searchParams.get('lat'),
+          lon: requestUrl.searchParams.get('lon'),
+          city: requestUrl.searchParams.get('city'),
+          name: requestUrl.searchParams.get('name'),
+          region: requestUrl.searchParams.get('region')
+        });
         sendJson(response, 200, payload);
       } catch (error) {
         apiError(response, error);
       }
       return;
+    }
+    if (pathname === '/api/sekitarku') {
+      return sekitarkuHandler(request, response);
+    }
+    if (pathname === '/api/widget' || pathname === '/api/widget-data') {
+      return widgetHandler(request, response);
     }
     if (pathname.startsWith('/api/')) {
       sendJson(response, 404, { error: { code: 'NOT_FOUND', message: 'Endpoint tidak ditemukan.' } });
@@ -104,7 +120,7 @@ if (require.main === module) {
   const server = createServer();
   server.listen(PORT, HOST, () => {
     const address = server.address();
-    console.log('CuacaKu listening on ' + HOST + ':' + (address && address.port || PORT) + ' · OpenWeather key ' + (healthPayload().configured ? 'configured' : 'not configured') + ' · cache ' + healthPayload().refreshIntervalSeconds + 's');
+    console.log('CuacaKu x Sekitarku listening on ' + HOST + ':' + (address && address.port || PORT) + ' · OpenWeather key ' + (healthPayload().configured ? 'configured' : 'not configured') + ' · cache ' + healthPayload().refreshIntervalSeconds + 's');
   });
   server.on('error', error => {
     console.error('Server failed to start: ' + error.code);

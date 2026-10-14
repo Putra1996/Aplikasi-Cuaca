@@ -316,8 +316,9 @@
     if (period && data.length) {
       var dayCount = data.length;
       var dailySource = WEATHER_DATA.provider && WEATHER_DATA.provider.modules && WEATHER_DATA.provider.modules.dailyForecast;
-      var sourceLabel = WEATHER_DATA.meta.live ? (dailySource && dailySource.days >= 10 ? 'OpenWeather · hingga 10 hari' : 'OpenWeather · ' + dayCount + ' hari tersedia') : 'fallback lokal · bukan live';
-      period.textContent = 'Klumprit, Jawa Tengah · ' + formatDate(data[0].date, { day: 'numeric', month: 'short' }) + '–' + formatDate(data[data.length - 1].date, { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + sourceLabel;
+      var sourceLabel = WEATHER_DATA.meta.live ? (dailySource && dailySource.days >= 10 ? 'OpenWeather · hingga 10 hari' : (WEATHER_DATA.meta.source || 'Live') + ' · ' + dayCount + ' hari tersedia') : 'fallback lokal · bukan live';
+      var locTitle = (WEATHER_DATA.location && WEATHER_DATA.location.name ? WEATHER_DATA.location.name + ', ' + (WEATHER_DATA.location.region || 'Indonesia') : 'Klumprit, Jawa Tengah');
+      period.textContent = locTitle + ' · ' + formatDate(data[0].date, { day: 'numeric', month: 'short' }) + '–' + formatDate(data[data.length - 1].date, { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + sourceLabel;
     }
   }
 
@@ -593,6 +594,9 @@
     renderMinuteCast();
     updateDataNotice();
     redrawCurrentTab();
+    if (typeof window.onCuacaKuRender === 'function') {
+      try { window.onCuacaKuRender(); } catch (e) {}
+    }
   }
 
   function switchTab(tabName) {
@@ -777,8 +781,9 @@
     return true;
   }
 
-  function loadLiveData() {
-    return fetch('api/weather', { headers: { accept: 'application/json' } }).then(function (response) {
+  function loadLiveData(querySuffix) {
+    var suffix = typeof querySuffix === 'string' && querySuffix ? querySuffix : (window._cuacakuLocationQuery || '');
+    return fetch('api/weather' + suffix, { headers: { accept: 'application/json' } }).then(function (response) {
       return response.json().then(function (body) {
         if (!response.ok) throw new Error('API ' + response.status);
         return body;
@@ -816,6 +821,9 @@
     switchTab: switchTab,
     getActivityScores: getActivityScores,
     formatTemp: formatTemp,
+    mergeLivePayload: mergeLivePayload,
+    loadLiveData: loadLiveData,
+    updateDataNotice: updateDataNotice,
     renderAll: renderAll
   };
 

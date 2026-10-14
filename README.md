@@ -1,19 +1,23 @@
-# CuacaKu — Dashboard Cuaca Klumprit
+# CuacaKu × Sekitarku — Dashboard Cuaca, AQI, Gempa BMKG & Gunung Api 500+ Kota Indonesia
 
-Dashboard cuaca responsif untuk Klumprit, Jawa Tengah: HTML, CSS, dan JavaScript vanilla plus satu file server Node.js kecil sebagai **proxy OpenWeather**. API key hanya hidup di environment variable server; browser hanya bicara dengan endpoint same-origin `/api/weather`.
+Dashboard terbuka pemantauan **Kualitas Udara (AQI US-EPA & OpenWeather)**, **Cuaca BMKG & Open-Meteo**, **Skor Lingkungan & Kesiapan Aktivitas Outdoor (Eco-Health 0–100)**, **Konversi Polusi Setara Rokok Pasif**, **Info Auto-Gempa BMKG & Potensi Tsunami**, serta **Status Gunung Api Terdekat (PVMBG/MAGMA)** di **516 Kota & Kabupaten (38 Provinsi) Indonesia** + **Deteksi Lokasi GPS Real-Time**.
 
-## Fitur
+Dibangun ringan dan **PWA-ready** menggunakan HTML5, CSS3, dan Vanilla JavaScript plus fungsi serverless Vercel (`api/*.js`) dan server lokal (`scripts/dev-server.js`).
 
-- Kondisi saat ini, peringatan, dan prakiraan ringkas 5 hari.
-- **Prakiraan 10 Hari** dengan detail harian, rentang suhu, hujan, angin, kelembapan, dan UV yang tersedia.
-- Prakiraan per jam (48 jam ke depan saat One Call 4.0 aktif; fallback 5 hari/3 jam tanpa One Call).
-- **MinuteCast / 1-minute timeline** (60 menit ke depan saat One Call 4.0 aktif).
-- **Kualitas Udara** dengan AQI OpenWeather (skala 1–5), konsentrasi PM2.5, PM10, NO₂, O₃, SO₂, CO, dan saran kehati-hatian.
-- **Kesehatan & Aktivitas** dengan faktor cuaca/AQI dan skor heuristik; data UV yang hilang tidak diperlakukan sebagai UV nol.
-- **Radar** skematis dengan timeline, play/pause, layer, drag, zoom, dan reset (tetap simulasi — lihat batasan).
-- **Per Bulan** dengan kalender, ringkasan, tabel, dan grafik (data contoh lokal).
-- Satuan **Celsius sebagai default**; pengguna dapat beralih ke Fahrenheit dan preferensi disimpan di `localStorage`.
-- Navigasi dan kontrol responsif untuk laptop, PC, HP, tablet, dan iPhone (hingga 360px + safe area).
+## Fitur Utama
+
+- **Nasional 516 Kota/Kabupaten (38 Provinsi) + Lokasi GPS Real-Time**: Cari dan pilih dari 516 wilayah administratif Indonesia (termasuk Klumprit, Jakarta, Surabaya, Nusantara IKN, dll.) dengan prefetching instan, atau gunakan tombol **🎯 GPS** untuk deteksi koordinat otomatis via Haversine proximity.
+- **Integrasi Multi-Sumber Resmi (BMKG + Open-Meteo + PVMBG + OpenWeather)**:
+  - **Open-Meteo Weather & Air Quality API**: Suhu, kelembapan, indeks UV, prakiraan 7 hari & per jam (dengan kalibrasi virga WMO-BMKG), serta **US-EPA AQI (0–500)** dan rincian polutan mikro (**PM2.5, PM10, NO₂, SO₂, CO, O₃, Debu**) disertai jarum spektrum dinamis.
+  - **BMKG InaTEWS API**: **Auto-Gempa Terkini** (`autogempa.json`) & **15 Gempa Terkini** (`gempaterkini.json`), magnitudo, kedalaman, jarak episenter dari lokasi Anda, peta guncangan (*Shakemap*), dan **Status Potensi Tsunami**.
+  - **PVMBG / MAGMA ESDM**: Pemantauan **29 Gunung Api Aktif Indonesia** dengan deteksi jarak kawah terdekat otomatis, **Status 4 Level Resmi PVMBG** (*Level I Normal, Level II Waspada, Level III Siaga, Level IV Awas*), dan radius bahaya steril kawah.
+  - **FDRS BMKG & Pantauan Karhutla (KLHK SiPongi+ / NASA FIRMS)**: Tingkat kemudahan kebakaran hutan & lahan (*AMAN, SEDANG, TINGGI, EKSTREM*), 122 titik panas satelit, serta **Korelasi Cerdas Kabut Asap**.
+  - **OpenWeather Proxy (`/api/weather`)**: Mendukung One Call API 4.0 (1-minute timeline MinuteCast, 10 hari, per jam) & Air Pollution API dengan API key yang aman di sisi server.
+- **Skor Lingkungan & Kesiapan Aktivitas Outdoor (Eco-Health 0–100)**: Menggabungkan skor AQI (50%), kenyamanan termal (25%), dan sinar UV (25%) menjadi skor komposit 0–100 lengkap dengan matriks kesiapan *Jogging & Lari*, *Bersepeda*, *Anak & Lansia*, serta *Ventilasi Rumah*.
+- **Konversi Polusi Setara Rokok Pasif (Formula Berkeley Earth)**: Menghitung estimasi paparan harian partikulat halus PM2.5 yang setara dengan hisapan batang rokok pasif (`1 batang rokok ≈ 22 µg/m³ PM2.5 per 24 jam`).
+- **Share Infografis 9:16 HD ke IG / WA Story**: Generator kartu infografis vertikal resolusi tinggi (`1080 × 1920 px`) berbasis HTML5 Canvas 2D dengan *Live Preview*, **1-Tap Native Web Share API** (`navigator.share`), unduh PNG HD, dan salin teks laporan.
+- **Panduan Tanggap Darurat & Hotline Nasional 112**: Panggilan cepat ke **112**, **Basarnas (115)**, **Ambulans (119)**, **Damkar (113)**, **Polri (110)**, dan **PLN (123)** beserta protokol keselamatan gempa, tsunami (aturan 20-20-20), erupsi gunung api, dan polusi udara.
+- **Ringan & PWA-Ready**: Dilengkapi `manifest.webmanifest`, Service Worker (`sw.js`) dengan strategi cache cerdas + SWR `localStorage` (TTL 15 menit), dan endpoint widget `/api/widget`.
 
 ## Arsitektur data
 
