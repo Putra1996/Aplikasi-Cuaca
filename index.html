@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/features.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="leaf.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -45,9 +47,15 @@
           <button class="nav-tab" type="button" data-tab="bulanan" aria-controls="tab-bulanan">📊 Per Bulan</button>
           <button class="nav-tab" type="button" data-tab="udara" aria-controls="tab-udara">🌫️ Udara</button>
           <button class="nav-tab" type="button" data-tab="aktivitas" aria-controls="tab-aktivitas">🏃 Aktivitas</button>
+          <button class="nav-tab" type="button" data-tab="bencana" aria-controls="tab-bencana">🌋 Gempa &amp; Gunung</button>
           <button class="nav-tab" type="button" data-tab="tentang" aria-controls="tab-tentang">ℹ️ Tentang</button>
         </nav>
         <div class="header-actions">
+          <button class="btn-header-action" id="btn-city-picker" type="button" data-open-modal="city-search" title="Pilih dari 516 Kota &amp; Kabupaten di 38 Provinsi Indonesia" aria-label="Pilih Kota Indonesia">📍 <span id="btn-city-picker-label">Klumprit</span></button>
+          <button class="btn-header-action" id="btn-gps" type="button" title="Deteksi lokasi GPS saya saat ini" aria-label="Gunakan lokasi GPS">🎯 GPS</button>
+          <button class="btn-header-action btn-share-story" id="btn-share-story" type="button" data-open-modal="share-card" title="Bagikan Infografis 9:16 ke IG / WA Story" aria-label="Bagikan Infografis Story">📸 Story</button>
+          <button class="btn-header-action btn-emergency" id="btn-emergency" type="button" data-open-modal="emergency-guide" title="Kontak Darurat 112 &amp; Panduan Bencana" aria-label="Kontak Darurat 112">🚨 112</button>
+          <button class="btn-header-action hidden" id="btn-install-pwa" type="button" title="Pasang Aplikasi PWA" aria-label="Pasang Aplikasi PWA">📲 Install</button>
           <button class="btn-unit" id="btn-unit" type="button" aria-label="Ganti satuan suhu">°C</button>
           <button class="btn-refresh" id="btn-refresh" type="button" title="Segarkan tampilan" aria-label="Segarkan tampilan">↻</button>
         </div>
@@ -65,9 +73,14 @@
       <button class="nav-tab" type="button" data-tab="radar" aria-controls="tab-radar">🗺️ Radar</button>
       <button class="nav-tab" type="button" data-tab="bulanan" aria-controls="tab-bulanan">📊 Per Bulan</button>
       <button class="nav-tab" type="button" data-tab="udara" aria-controls="tab-udara">🌫️ Kualitas Udara</button>
-      <button class="nav-tab" type="button" data-tab="aktivitas" aria-controls="tab-aktivitas">🏃 Kesehatan & Aktivitas</button>
+      <button class="nav-tab" type="button" data-tab="aktivitas" aria-controls="tab-aktivitas">🏃 Kesehatan &amp; Aktivitas</button>
+      <button class="nav-tab" type="button" data-tab="bencana" aria-controls="tab-bencana">🌋 Gempa &amp; Gunung Api</button>
       <button class="nav-tab" type="button" data-tab="tentang" aria-controls="tab-tentang">ℹ️ Tentang</button>
       <div class="mobile-tools" aria-label="Pengaturan">
+        <button class="btn-header-action" type="button" data-open-modal="city-search">📍 Pilih 516 Kota</button>
+        <button class="btn-header-action" type="button" id="btn-gps-mobile" onclick="window.SEKITARKU_APP && window.SEKITARKU_APP.requestGpsLocation()">🎯 GPS</button>
+        <button class="btn-header-action btn-share-story" type="button" data-open-modal="share-card">📸 Share Story</button>
+        <button class="btn-header-action btn-emergency" type="button" data-open-modal="emergency-guide">🚨 112</button>
         <button class="btn-unit" id="btn-unit-mobile" type="button" aria-label="Ganti satuan suhu">°C</button>
         <button class="btn-refresh" id="btn-refresh-mobile" type="button" aria-label="Segarkan tampilan">↻ Segarkan</button>
       </div>
@@ -91,6 +104,14 @@
               <p class="location-detail" id="location-detail">Indonesia · memuat data OpenWeather…</p>
             </div>
           </div>
+          <div class="hero-sekitarku-toolbar" role="toolbar" aria-label="Kontrol Nasional 500+ Kota, GPS, dan Infografis">
+            <button type="button" class="hero-action-btn primary" data-open-modal="city-search">🏙️ Pilih Kota (516 Wilayah · 38 Provinsi)</button>
+            <button type="button" class="hero-action-btn" id="btn-gps-hero">🎯 Lokasi GPS Saya</button>
+            <button type="button" class="hero-action-btn accent" data-open-modal="share-card">📸 Share Infografis IG/WA Story</button>
+            <button type="button" class="hero-action-btn" data-tab="bencana">🌋 Gempa BMKG &amp; Gunung Api</button>
+            <button type="button" class="hero-action-btn danger" data-open-modal="emergency-guide">🚨 Darurat 112</button>
+          </div>
+          <div class="popular-cities-bar" id="sekitarku-popular-cities" aria-label="Kota populer Indonesia"></div>
           <div class="current-weather-main">
             <div class="current-temp-wrap">
               <span id="current-icon" class="current-icon weather-emoji" role="img" aria-label="Awan berkabut">🌫️</span>
@@ -110,6 +131,170 @@
             <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌇</span><span class="detail-label">Matahari terbenam</span><span class="detail-value" id="detail-sunset">17:36</span></div>
             <div class="detail-card"><span class="detail-icon" aria-hidden="true">🌫️</span><span class="detail-label">Kualitas udara</span><span class="detail-value" id="detail-air">AQI 205 · Sangat Tidak Sehat</span></div>
           </div>
+        </div>
+      </section>
+
+      <!-- SEKITARKU INTEGRATED DASHBOARD: Skor Lingkungan, Rokok Pasif, US-EPA AQI, Auto-Gempa BMKG, Gunung Api PVMBG & Karhutla -->
+      <section class="section sekitarku-section" id="sekitarku-dashboard-section" aria-label="Pantauan Lingkungan Hidup dan Mitigasi Bencana Sekitarku">
+        <div class="section-heading-row">
+          <div>
+            <h2 class="section-title">🌿 Sekitarku · Pantauan Lingkungan, Gempa BMKG &amp; Gunung Api Real-Time</h2>
+            <p class="section-subtitle">Data terbuka BMKG InaTEWS, Open-Meteo &amp; Copernicus Atmosphere, PVMBG/MAGMA ESDM, dan KLHK SiPongi+ di 516 kota/kabupaten Indonesia.</p>
+          </div>
+          <div class="sekitarku-heading-actions">
+            <span class="data-badge sekitarku-live-badge">⚡ BMKG + Open-Meteo · PWA Ready</span>
+            <button class="text-link-button" type="button" data-open-modal="share-card">📸 Share ke IG/WA Story →</button>
+          </div>
+        </div>
+
+        <!-- 1. Kartu Skor Lingkungan & Kesiapan Aktivitas Outdoor + Konversi Rokok Pasif -->
+        <article class="sekitarku-eco-card" id="eco-health-card">
+          <div class="eco-card-top">
+            <div class="eco-score-main">
+              <div class="eco-score-badge" id="eco-score-badge">
+                <strong id="eco-score-value">87</strong>
+                <span>/100</span>
+              </div>
+              <div class="eco-score-copy">
+                <span class="eyebrow">SKOR KESEHATAN LINGKUNGAN KOMPOSIT (ECO-HEALTH)</span>
+                <h3 id="eco-score-category">Sangat Sehat &amp; Optimal</h3>
+                <p id="eco-score-subtitle">Indeks komposit kualitas udara (US-EPA AQI), suhu terasa, kelembapan, dan radiasi UV.</p>
+              </div>
+            </div>
+
+            <div class="eco-cigs-box" id="eco-cigs-box">
+              <div class="eco-cigs-header">
+                <span class="eco-cigs-tag">KONVERSI POLUSI SETARA ROKOK PASIF</span>
+              </div>
+              <strong id="eco-cigs-value">🚬 Setara 0.6 batang rokok/hari</strong>
+              <small id="eco-cigs-detail">PM2.5: 12.5 µg/m³ · Formula Berkeley Earth (1 batang ≈ 22 µg/m³ per 24 jam)</small>
+            </div>
+          </div>
+
+          <div class="eco-subscores" id="eco-subscores"></div>
+
+          <div class="eco-activities-wrap">
+            <div class="eco-activities-header">
+              <span>🛡️ MATRIKS KESIAPAN AKTIVITAS OUTDOOR &amp; VENTILASI</span>
+              <button type="button" class="btn-mini-story" data-open-modal="share-card">📸 Bagikan Infografis 9:16</button>
+            </div>
+            <div class="eco-activity-matrix" id="eco-activity-matrix"></div>
+          </div>
+        </article>
+
+        <!-- 2. Grid 4 Kartu: Spektrum AQI US-EPA, Auto-Gempa BMKG, Gunung Api PVMBG, Karhutla FDRS -->
+        <div class="sekitarku-cards-grid" id="sekitarku-cards-grid">
+          <!-- Kartu AQI US-EPA (0-500) & Jarum Spektrum -->
+          <article class="sekitarku-card" id="sekitarku-aqi-card">
+            <div class="sc-header">
+              <div>
+                <h3>🌫️ Spektrum Kualitas Udara (US-EPA AQI)</h3>
+                <small>Open-Meteo &amp; Copernicus Atmosphere (0–500)</small>
+              </div>
+              <span class="sc-badge" id="sekitarku-aqi-badge">Baik</span>
+            </div>
+            <div class="sc-aqi-readout">
+              <strong class="sc-big-num" id="sekitarku-aqi-number">45</strong>
+              <div>
+                <span class="sc-aqi-sub" id="sekitarku-aqi-label">US-EPA AQI · Setara 0.6 batang rokok/hari</span>
+                <p class="sc-advice" id="sekitarku-aqi-advice">Kualitas udara sangat baik. Ideal untuk seluruh aktivitas luar ruangan.</p>
+              </div>
+            </div>
+            <div class="sc-spectrum-wrap">
+              <div class="sc-spectrum-bar" title="Skala Spektrum US-EPA AQI 0-500">
+                <span class="sc-spectrum-needle" id="sekitarku-aqi-needle" style="left: 9%"></span>
+              </div>
+              <div class="sc-spectrum-ticks">
+                <span>0 Baik</span>
+                <span>50 Sedang</span>
+                <span>100 Sensitif</span>
+                <span>150 Tidak Sehat</span>
+                <span>300+ Bahaya</span>
+              </div>
+            </div>
+            <div class="sekitarku-pollutants-grid" id="sekitarku-pollutants-grid"></div>
+          </article>
+
+          <!-- Kartu Info Auto-Gempa BMKG & Potensi Tsunami -->
+          <article class="sekitarku-card" id="sekitarku-quake-card">
+            <div class="sc-header">
+              <div>
+                <h3>🫨 Info Auto-Gempa BMKG &amp; Tsunami</h3>
+                <small>BMKG InaTEWS Real-Time Seismik</small>
+              </div>
+              <span class="sc-badge" id="sekitarku-quake-badge">M 4.2</span>
+            </div>
+            <div class="sc-quake-main">
+              <strong class="sc-big-num" id="sekitarku-quake-mag">4.2 M</strong>
+              <div class="sc-quake-meta">
+                <span id="sekitarku-quake-time">🕒 Memuat waktu gempa…</span>
+                <strong id="sekitarku-quake-depth">Kedalaman: 14 km</strong>
+                <small id="sekitarku-quake-dirasakan">Skala MMI: Dipantau BMKG</small>
+              </div>
+            </div>
+            <div class="sc-info-box">
+              <p id="sekitarku-quake-wilayah">Memuat wilayah episentrum gempa terkini BMKG…</p>
+              <small id="sekitarku-quake-distance">🧭 Menghitung jarak ke episenter…</small>
+            </div>
+            <div class="sc-footer-row">
+              <span class="sekitarku-tsunami-badge tsunami-safe" id="sekitarku-quake-potensi">🛡️ Tidak berpotensi tsunami</span>
+              <div class="sc-footer-btns">
+                <button type="button" class="sc-btn-secondary" id="btn-toggle-recent-quakes">▼ Riwayat 15 Gempa BMKG</button>
+                <button type="button" class="sc-btn-primary" data-tab="bencana">Detail →</button>
+              </div>
+            </div>
+            <div class="quake-recent-list hidden" id="sekitarku-quake-recent-list"></div>
+          </article>
+
+          <!-- Kartu Status Gunung Api Terdekat (PVMBG / MAGMA) -->
+          <article class="sekitarku-card" id="sekitarku-volcano-card">
+            <div class="sc-header">
+              <div>
+                <h3>🌋 Status Gunung Api Terdekat</h3>
+                <small>Data Resmi PVMBG · MAGMA ESDM</small>
+              </div>
+              <span class="sc-badge" id="sekitarku-volcano-badge">LEVEL II (Waspada)</span>
+            </div>
+            <div class="sc-info-box sc-volcano-box">
+              <div>
+                <strong class="sc-volcano-title" id="sekitarku-volcano-name">🌋 Gunung Slamet</strong>
+                <small id="sekitarku-volcano-meta">Jawa Tengah · Elevasi 3432 mdpl</small>
+              </div>
+              <div class="sc-distance-pill">
+                <span>JARAK KAWAH</span>
+                <strong id="sekitarku-volcano-distance">20.1 km</strong>
+              </div>
+            </div>
+            <p class="sc-advice" id="sekitarku-volcano-note">Hindari aktivitas dalam radius 2 km dari kawah puncak.</p>
+            <div class="sc-footer-row">
+              <small id="sekitarku-volcano-radius">Radius steril kawah: 2 km</small>
+              <button type="button" class="sc-btn-primary" data-open-modal="volcano-list">Semua Gunung Api (29) →</button>
+            </div>
+          </article>
+
+          <!-- Kartu Indeks Karhutla (FDRS BMKG) & Korelasi Kabut Asap -->
+          <article class="sekitarku-card" id="sekitarku-karhutla-card">
+            <div class="sc-header">
+              <div>
+                <h3>🔥 Indeks Karhutla (FDRS) &amp; Kabut Asap</h3>
+                <small>BMKG FDRS · KLHK SiPongi+ &amp; NASA FIRMS</small>
+              </div>
+              <span class="sc-badge" id="sekitarku-fdrs-badge">FDRS Lahan: AMAN</span>
+            </div>
+            <div class="sc-haze-row">
+              <span class="sekitarku-haze-pill haze-clean" id="sekitarku-haze-badge">🟢 Bebas Kabut Asap</span>
+            </div>
+            <div class="sc-info-box">
+              <strong id="sekitarku-hotspot-name">🔥 Memuat titik panas terdekat…</strong>
+              <small id="sekitarku-hotspot-meta">Satelit VIIRS SNPP / MODIS</small>
+              <small id="sekitarku-hotspot-distance">Menghitung jarak titik panas…</small>
+            </div>
+            <p class="sc-advice" id="sekitarku-fdrs-desc">Kondisi tanah &amp; vegetasi basah/lembab. Sangat kecil kemungkinan terjadi kebakaran hutan &amp; lahan.</p>
+            <div class="sc-footer-row">
+              <small>38 Provinsi · Satelit NRT</small>
+              <button type="button" class="sc-btn-primary" data-open-modal="karhutla-list">Semua Titik Panas (122) →</button>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -294,6 +479,54 @@
       </section>
     </main>
 
+    <!-- TAB BARU: GEMPA BMKG, GUNUNG API PVMBG, & KARHUTLA -->
+    <main id="tab-bencana" class="tab-content" aria-label="Pusat Pantauan Gempa BMKG dan Gunung Api PVMBG">
+      <section class="section">
+        <div class="section-heading-row">
+          <div>
+            <h1 class="section-title">🌋 Pusat Mitigasi Bencana: Auto-Gempa BMKG, Gunung Api PVMBG &amp; Karhutla</h1>
+            <p class="section-subtitle">Integrasi real-time BMKG InaTEWS, PVMBG/MAGMA ESDM (29 Gunung Api Aktif), dan Satelit NASA FIRMS / KLHK SiPongi+.</p>
+          </div>
+          <div class="sekitarku-heading-actions">
+            <button type="button" class="hero-action-btn danger" data-open-modal="emergency-guide">🚨 Kontak Darurat 112 &amp; Protokol</button>
+            <button type="button" class="hero-action-btn accent" data-open-modal="share-card">📸 Bagikan Infografis Story</button>
+          </div>
+        </div>
+
+        <section class="section section-inset">
+          <h2 class="section-title">🫨 Gempa Bumi Terkini (BMKG InaTEWS) &amp; Status Potensi Tsunami</h2>
+          <div id="bencana-quake-detail" class="bencana-quake-card"></div>
+          <h3 class="subsection-title">📋 Daftar 15 Gempa Bumi Terkini di Indonesia (BMKG)</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Magnitudo</th>
+                  <th scope="col">Wilayah Episentrum</th>
+                  <th scope="col">Waktu Kejadian</th>
+                  <th scope="col">Kedalaman</th>
+                  <th scope="col">Jarak dari Lokasi Anda</th>
+                  <th scope="col">Potensi Tsunami</th>
+                </tr>
+              </thead>
+              <tbody id="bencana-quake-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section section-inset">
+          <div class="section-heading-row">
+            <div>
+              <h2 class="section-title">🌋 Status Gunung Api Terdekat (PVMBG / MAGMA Indonesia)</h2>
+              <p class="section-subtitle">Diurutkan otomatis berdasarkan jarak terdekat dari kota atau koordinat GPS Anda.</p>
+            </div>
+            <button type="button" class="sc-btn-primary" data-open-modal="volcano-list">🔍 Cari &amp; Filter 29 Gunung Api →</button>
+          </div>
+          <div class="bencana-volcano-grid" id="bencana-volcano-grid"></div>
+        </section>
+      </section>
+    </main>
+
     <main id="tab-tentang" class="tab-content" aria-label="Tentang CuacaKu">
       <section class="section about-section">
         <div class="about-card">
@@ -311,12 +544,116 @@
     </main>
 
     <footer class="footer">
-      <div class="footer-inner"><p>© 2026 CuacaKu — Dashboard Cuaca Klumprit</p><p class="footer-small" id="footer-data-note">Fallback lokal (bukan live) · jalankan server.js dengan OPENWEATHER_API_KEY untuk data OpenWeather · radar simulasi.</p></div>
+      <div class="footer-inner"><p>© 2026 CuacaKu × Sekitarku — Dashboard Cuaca, AQI, Gempa BMKG &amp; Gunung Api 500+ Kota Indonesia</p><p class="footer-small" id="footer-data-note">Fallback lokal (bukan live) · jalankan server.js dengan OPENWEATHER_API_KEY untuk data OpenWeather · radar simulasi.</p></div>
     </footer>
   </div>
 
+  <!-- MODAL 1: PILIH 516 KOTA & KABUPATEN INDONESIA (38 PROVINSI) + GPS -->
+  <div id="city-search-modal" class="sekitarku-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="city-modal-title">
+    <div class="sekitarku-modal-card">
+      <div class="sm-header">
+        <div>
+          <h2 id="city-modal-title">📍 Pilih Kota &amp; Kabupaten Indonesia (516 Wilayah)</h2>
+          <p>Cakupan nasional 38 Provinsi sesuai stasiun BMKG &amp; Open-Meteo</p>
+        </div>
+        <button type="button" class="sm-close-btn" data-close-modal="true" aria-label="Tutup">✕</button>
+      </div>
+      <div class="sm-toolbar">
+        <div class="sm-search-row">
+          <input type="search" id="city-modal-search-input" placeholder="Cari dari 516 kota, kabupaten, atau provinsi (misal: Jakarta, Surabaya, Klumprit, IKN)…" autocomplete="off">
+          <button type="button" class="hero-action-btn primary" id="btn-gps-modal">🎯 Gunakan GPS Saya</button>
+        </div>
+        <div class="sm-filter-pills" id="city-modal-regions"></div>
+        <div class="sm-count-note" id="city-modal-count">Menampilkan 516 kota &amp; kabupaten</div>
+      </div>
+      <div class="sm-body" id="city-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: GENERATOR INFOGRAFIS 9:16 HD KE IG / WA STORY -->
+  <div id="share-card-modal" class="sekitarku-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+    <div class="sekitarku-modal-card sm-share-card">
+      <div class="sm-header">
+        <div>
+          <h2 id="share-modal-title">📸 Bagikan Infografis ke IG / WA Story (9:16 HD)</h2>
+          <p>Kartu resolusi tinggi 1080 × 1920 px siap bagikan ke Instagram Stories, WhatsApp Status &amp; X</p>
+        </div>
+        <button type="button" class="sm-close-btn" data-close-modal="true" aria-label="Tutup">✕</button>
+      </div>
+      <div class="sm-body sm-share-body">
+        <div class="share-canvas-preview-wrap">
+          <canvas id="share-story-canvas" width="1080" height="1920" aria-label="Pratinjau kartu infografis 9:16"></canvas>
+        </div>
+        <div class="share-actions-panel">
+          <h3>Bagikan dalam 1 Ketukan</h3>
+          <p>Gambar infografis memuat Skor Lingkungan (0–100), Konversi Rokok Pasif, US-EPA AQI, Cuaca BMKG/Open-Meteo, Gunung Api Terdekat, dan Info Auto-Gempa BMKG.</p>
+          <div class="share-btn-stack">
+            <button type="button" class="share-action-btn primary" id="btn-share-native">📲 Bagikan ke IG / WA Story (Native Share)</button>
+            <button type="button" class="share-action-btn secondary" id="btn-download-story">⬇️ Unduh Gambar PNG HD (1080×1920)</button>
+            <button type="button" class="share-action-btn outline" id="btn-copy-share-text">📋 Salin Teks Laporan</button>
+          </div>
+          <label for="share-text-preview" class="share-text-label">Ringkasan Teks untuk WhatsApp / Telegram:</label>
+          <textarea id="share-text-preview" rows="6" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DIREKTORI 29 GUNUNG API AKTIF INDONESIA (PVMBG / MAGMA) -->
+  <div id="volcano-list-modal" class="sekitarku-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="volcano-modal-title">
+    <div class="sekitarku-modal-card">
+      <div class="sm-header">
+        <div>
+          <h2 id="volcano-modal-title">🌋 Pemantauan Gunung Api Indonesia (PVMBG / MAGMA ESDM)</h2>
+          <p>Status 4 Level Resmi: Level I Normal, Level II Waspada, Level III Siaga, Level IV Awas</p>
+        </div>
+        <button type="button" class="sm-close-btn" data-close-modal="true" aria-label="Tutup">✕</button>
+      </div>
+      <div class="sm-toolbar">
+        <input type="search" id="volcano-modal-search-input" placeholder="Cari nama gunung api atau provinsi (misal: Merapi, Slamet, Semeru, Lewotobi)…" autocomplete="off">
+        <div class="sm-filter-pills" id="volcano-modal-regions"></div>
+        <div class="sm-filter-pills" id="volcano-modal-statuses"></div>
+      </div>
+      <div class="sm-body" id="volcano-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: DIREKTORI 122 TITIK PANAS KARHUTLA (KLHK SIPONGI+ / NASA FIRMS) -->
+  <div id="karhutla-list-modal" class="sekitarku-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="karhutla-modal-title">
+    <div class="sekitarku-modal-card">
+      <div class="sm-header">
+        <div>
+          <h2 id="karhutla-modal-title">🔥 Pantauan Titik Panas Karhutla (KLHK SiPongi+ &amp; NASA FIRMS)</h2>
+          <p>Deteksi satelit VIIRS SNPP 375m, NOAA-20/21 &amp; MODIS mencakup 38 Provinsi</p>
+        </div>
+        <button type="button" class="sm-close-btn" data-close-modal="true" aria-label="Tutup">✕</button>
+      </div>
+      <div class="sm-toolbar">
+        <input type="search" id="karhutla-modal-search-input" placeholder="Cari kabupaten/kota atau provinsi titik panas…" autocomplete="off">
+        <div class="sm-filter-pills" id="karhutla-modal-islands"></div>
+      </div>
+      <div class="sm-body" id="karhutla-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: PANDUAN TANGGAP DARURAT & KONTAK DARURAT 112 -->
+  <div id="emergency-guide-modal" class="sekitarku-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="emergency-modal-title">
+    <div class="sekitarku-modal-card">
+      <div class="sm-header">
+        <div>
+          <h2 id="emergency-modal-title">🚨 Tanggap Bencana &amp; Kontak Darurat Nasional 112</h2>
+          <p>Panduan keselamatan resmi standar BNPB, BMKG, PVMBG &amp; Basarnas</p>
+        </div>
+        <button type="button" class="sm-close-btn" data-close-modal="true" aria-label="Tutup">✕</button>
+      </div>
+      <div class="sm-body" id="emergency-modal-body"></div>
+    </div>
+  </div>
+
   <script src="js/data.js"></script>
+  <script src="js/sekitarku-data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/sekitarku.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/radar.js"></script>
 </body>

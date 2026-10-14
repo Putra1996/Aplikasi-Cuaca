@@ -1,0 +1,29 @@
+{
+  "name": "CuacaKu x Sekitarku — Dashboard Cuaca, AQI, Gempa BMKG & Gunung Api 500+ Kota Indonesia",
+  "short_name": "CuacaKu · Sekitarku",
+  "description": "Dashboard terbuka pantau Kualitas Udara (AQI), Cuaca BMKG & Open-Meteo, Skor Lingkungan & Rokok Pasif, Gempa & Gunung Api Real-Time di 500+ Kota Indonesia!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/leaf.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "CuacaKu x Sekitarku AQI & Cuaca",
+      "short_name": "Sekitarku",
+      "description": "Pantau kualitas udara, rokok pasif & cuaca BMKG real-time di layar utama HP Anda",
+      "tag": "sekitarku-widget",
+      "template": "widget-template",
+      "ms_ac_template": "/widget.json",
+      "data": "/api/widget",
+      "type": "application/json"
+    }
+  ]
+}
