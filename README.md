@@ -71,7 +71,7 @@ Repo ini sudah berbentuk **situs statis + fungsi serverless** yang dipahami Verc
 
 1. Import repo di Vercel (framework preset otomatis **Other** — dipaksa oleh `"framework": null` di `vercel.json`).
 2. Di **Project Settings → Environment Variables**, tambahkan `OPENWEATHER_API_KEY` (opsional — tanpa key, situs tetap live via Open-Meteo).
-3. Deploy. Verifikasi `https://<domain>/api/health` → `providers.fallback.enabled: true` + `lastFetch` (penyedia yang benar-benar dipakai), lalu `/api/weather` → `meta.live: true` dan `meta.source` jujur (`OpenWeather` atau `Open-Meteo`).
+3. Deploy. Verifikasi `https://<domain>/api/health` → `providers.fallback.enabled: true` + `lastFetch` (penyedia yang benar-benar dipakai; bersifat per-instance sehingga bisa `null` di instance dingin), lalu `/api/weather` → `meta.live: true` dan `meta.source` jujur (`OpenWeather` atau `Open-Meteo`).
 
 > ⚠️ **Jangan membuat file `server.js`/`server.ts` di root repo.** Vercel akan otomatis mendeteksinya sebagai framework "Node" dan membungkus seluruh situs sebagai satu fungsi — inilah penyebab insiden `500 FUNCTION_INVOCATION_FAILED` (lihat `AUDIT.md`). Ada tes regresi yang menjaga hal ini.
 
